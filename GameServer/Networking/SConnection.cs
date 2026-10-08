@@ -12,7 +12,7 @@ using System.Text;
 namespace GameServer.Networking
 {
 
-    public sealed class SConnection
+    public class SConnection
     {
         private DateTime DisconnectTime;
         private bool Sending;
@@ -44,6 +44,18 @@ namespace GameServer.Networking
             ErrorEventHandler = (EventHandler<Exception>)Delegate.Combine(ErrorEventHandler, new EventHandler<Exception>(NetworkServiceGateway.断网回调));
             NetAddress = Connection.Client.RemoteEndPoint.ToString().Split(':')[0];
             StartAsyncReceive();
+        }
+
+        protected SConnection()
+        {
+            // 机器人虚拟连接专用:不持有任何真实 Socket,发包全部丢弃。
+            ReceivedData = new byte[0];
+            ReceivedPackets = new ConcurrentQueue<GamePacket>();
+            SendPackets = new ConcurrentQueue<GamePacket>();
+            ConnectedTime = MainProcess.CurrentTime;
+            ConnectionErrored = true;
+            NetAddress = "BOT";
+            MacAddress = "BOT";
         }
 
         public void Process()
@@ -104,7 +116,7 @@ namespace GameServer.Networking
                 CurrentStage = GameStage.StartingSessionScene;
             }
         }
-        public void SendPacket(GamePacket packet)
+        public virtual void SendPacket(GamePacket packet)
         {
             if (!ConnectionErrored && !NetworkServiceGateway.StoppedService && packet != null)
             {
@@ -119,7 +131,7 @@ namespace GameServer.Networking
                 }
             }
         }
-        public void SendRaw(ushort type, ushort length, byte[] data, bool encoded = true)
+        public virtual void SendRaw(ushort type, ushort length, byte[] data, bool encoded = true)
         {
             byte[] output;
             if (length == 0)

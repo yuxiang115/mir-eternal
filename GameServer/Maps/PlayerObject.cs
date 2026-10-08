@@ -14160,6 +14160,7 @@ namespace GameServer.Maps
                     字节描述 = 字节描述
                 });
                 MainProcess.AddChatLog("[General][" + this.ObjectName + "]: ", array);
+                GameServer.Bots.BotManager.OnNearbyChat(this, text);
                 return;
             }
             if (num == 2415919107U)
@@ -14420,6 +14421,7 @@ namespace GameServer.Maps
                     {
                         字节描述 = 字节描述2
                     });
+                    GameServer.Bots.BotManager.OnWhisperToBot(this, CharacterData, Encoding.UTF8.GetString(array).TrimEnd('\0'));
                     MainProcess.AddChatLog(string.Format("[Whisper][{0}]=>[{1}]: ", this.ObjectName, CharacterData.CharName), array);
                     return;
                 }

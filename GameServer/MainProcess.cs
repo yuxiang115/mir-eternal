@@ -68,6 +68,7 @@ namespace GameServer
             MapGatewayProcess.Start();
             MainForm.AddSystemLog("Network services are being started...");
             NetworkServiceGateway.Start();
+            GameServer.Bots.BotManager.Initialize();
             MainForm.AddSystemLog("The server has been successfully opened");
             Running = true;
             MainForm.ServerStartedCallback();
@@ -88,6 +89,7 @@ namespace GameServer
                     ProcessSaveData();
                     ProcessServerStats();
                     ProcessGMCommands();
+                    GameServer.Bots.BotManager.Process();
                     NetworkServiceGateway.Process();
                     MapGatewayProcess.Process();
                     ProcessReloadTasks();
