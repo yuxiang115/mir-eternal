@@ -1245,7 +1245,7 @@ namespace GameServer.Bots
                     continue;
 
                 var distance = Math.Max(Math.Abs(spawn.FromCoords.X - player.CurrentPosition.X), Math.Abs(spawn.FromCoords.Y - player.CurrentPosition.Y));
-                if (distance >= 25 && distance < nearestDistance)
+                if (distance >= 15 && distance < nearestDistance)
                 {
                     nearestDistance = distance;
                     nearest = spawn;

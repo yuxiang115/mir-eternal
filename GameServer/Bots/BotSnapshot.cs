@@ -197,16 +197,18 @@ namespace GameServer.Bots
                 if (spawn.FromMapId != player.CurrentMap.MapId || spawn.Spawns == null || spawn.Spawns.Length == 0)
                     continue;
                 var distance = Math.Max(Math.Abs(spawn.FromCoords.X - player.CurrentPosition.X), Math.Abs(spawn.FromCoords.Y - player.CurrentPosition.Y));
-                if (distance > 120)
-                    continue;
                 var mainMonster = spawn.Spawns.OrderByDescending(x => x.SpawnCount).FirstOrDefault();
                 if (mainMonster == null)
                     continue;
                 Monsters template;
                 var monsterLevel = GameServer.Templates.Monsters.DataSheet.TryGetValue(mainMonster.MonsterName, out template) ? template.Level : 0;
-                snapshot.SpawnSpots.Add(spawn.RegionName + ":" + mainMonster.MonsterName + "(" + monsterLevel + "级x" + mainMonster.SpawnCount + "," + DirectionName(player.CurrentPosition, spawn.FromCoords) + distance + "格)");
+                snapshot.SpawnSpots.Add(mainMonster.MonsterName + "(" + monsterLevel + "级x" + mainMonster.SpawnCount + ") " + DirectionName(player.CurrentPosition, spawn.FromCoords) + distance + "格@" + spawn.FromCoords.X + "," + spawn.FromCoords.Y);
             }
-            snapshot.SpawnSpots = snapshot.SpawnSpots.OrderBy(x => x).Take(4).ToList();
+            // 最近的排前面:近的先去,全图点位都给(不再截断120格,跑图也是玩法)
+            snapshot.SpawnSpots = snapshot.SpawnSpots
+                .OrderBy(x => int.Parse(System.Text.RegularExpressions.Regex.Match(x, "(\\d+)格").Groups[1].Value))
+                .Take(6)
+                .ToList();
 
             // ---- 当前地图出口(哪扇门通往哪张图,用中文图名) ----
             foreach (var gate in TeleportGates.DataSheet)
