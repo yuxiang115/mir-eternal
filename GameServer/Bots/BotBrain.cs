@@ -823,54 +823,54 @@ namespace GameServer.Bots
 
             try
             {
-                var keepFrom = Math.Max(2, _conversation.Count - Math.Max(6, _conversation.Count * 2 / 5)); // 0=system 1=记忆,不动
-                if (keepFrom <= 2)
+                var transcript = _conversation.Skip(1)
+                    .Select(m => (m.Role == "user" ? "[看到] " : "[我说/我做] ") + (m.Content ?? ""));
+
+                var extractPrompt =
+                    "你刚经历了很长的一段游戏时光,现在要整理记忆。以下是你的完整会话记录:" + (char)10 +
+                    string.Join((char)10 + "---" + (char)10, transcript) + (char)10 + (char)10 +
+                    "请做两件事:" + (char)10 +
+                    "1. 用 remember 工具把值得长期记住的事存入记忆(认识的人用'关于玩家名: 印象',重要成就用'里程碑: ...',游戏规律用'知识: ...')" + (char)10 +
+                    "2. 然后输出一段浓缩摘要(三五句话:你和谁、在哪、干了什么、结果)" + (char)10 +
+                    "摘要用'摘要:'开头。不要多余的话。";
+
+                var extractResult = await LlmClient.ChatAsync(config.Llm, new List<LlmMessage>
                 {
-                    TrimHistory();
-                    return;
+                    new LlmMessage("user", extractPrompt),
+                }, BuildRememberTools());
+
+                if (extractResult.ToolCalls != null)
+                {
+                    foreach (var call in extractResult.ToolCalls)
+                    {
+                        if (call.Name == "remember")
+                        {
+                            var saved = Memory.Remember(call.Arguments?["text"]?.ToString());
+                            MainProcess.AddSystemLog("[Bot压缩存记忆] " + Definition.Name + ": " + saved);
+                        }
+                    }
+                    MemoryDirty = true;
                 }
 
-                var transcript = _conversation.Skip(2).Take(keepFrom - 2) // 跳过 system+记忆
-                    .Select(m => (m.Role == "user" ? "[看到] " : "[我想/我做] ") + m.Content);
-                var msgs = new List<LlmMessage>
-                {
-                    new LlmMessage("system", "你在整理一个传奇游戏玩家的会话记录,做结构化提取供他之后回忆。"),
-                    new LlmMessage("user",
-                        "会话记录:\n" + string.Join("\n---\n", transcript) +
-                        "\n\n输出两段,不要多余的话:\n摘要: 三五句话,和谁/在哪/发生了什么/结果\n要点:\n- 每行一条值得长期记住的事实或结论(玩家习惯、约定、重要得失);没有就只写\"无\""),
-                };
+                var summary = (extractResult.Content ?? "").Trim();
+                var idx = summary.IndexOf("摘要");
+                if (idx >= 0)
+                    summary = summary.Substring(idx).Trim();
 
-                var result = await LlmClient.ChatAsync(config.Llm, msgs, null);
-                var summary = (result.Content ?? "").Trim();
                 if (summary.Length == 0)
                 {
                     TrimHistory();
                     return;
                 }
 
-                // 压缩 = 单一 reset:清掉 [1..] 全部,放一条浓缩摘要(含记忆要点)
-                // 之后继续纯 append — cache 从这里重新积累(一次性 miss,然后稳定)
                 _conversation.RemoveRange(1, _conversation.Count - 1);
-                _conversation.Add(new LlmMessage("user", "[你之前的记忆和经历(压缩浓缩)]\n" + summary));
+                _conversation.Add(new LlmMessage("user", "[你之前的经历(压缩浓缩)]" + (char)10 + summary));
 
-                // "要点"部分写进长期记忆,不随会话丢
-                var idx = summary.IndexOf("要点");
-                if (idx >= 0)
-                {
-                    foreach (var line in summary.Substring(idx).Split('\n'))
-                    {
-                        var text = line.Trim().TrimStart('-', '•', '*').Trim();
-                        if (text.Length > 6 && !text.StartsWith("无"))
-                            Memory.RecordEpisode("想起来了: " + text, 3);
-                    }
-                    MemoryDirty = true;
-                }
-
-                MainProcess.AddSystemLog("[Bot记忆] " + Definition.Name + " 会话压缩: " + config.CompressThresholdTokens + "tok 阈值 -> 现在 " + EstimateTokens() + "tok");
+                MainProcess.AddSystemLog("[Bot压缩] " + Definition.Name + " 完成: 记忆已存盘,上下文重置");
             }
             catch (Exception ex)
             {
-                MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 会话压缩失败(退化为截断): " + ex.Message);
+                MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 压缩失败(退化为截断): " + ex.Message);
             }
             finally
             {
@@ -878,10 +878,31 @@ namespace GameServer.Bots
             }
         }
 
-        /// <summary>
-        /// 反思(Generative Agents 式):攒够了新经历后,像人一样琢磨明白几件事,
-        /// 存进长期记忆成为"我悟出来的道理"。后台线程执行,结果经 MemoryDirty 回主线程生效。
-        /// </summary>
+        private static JArray BuildRememberTools()
+        {
+            return new JArray
+            {
+                new JObject
+                {
+                    ["type"] = "function",
+                    ["function"] = new JObject
+                    {
+                        ["name"] = "remember",
+                        ["description"] = "存入长期记忆(重启不丢)",
+                        ["parameters"] = new JObject
+                        {
+                            ["type"] = "object",
+                            ["properties"] = new JObject
+                            {
+                                ["text"] = new JObject { ["type"] = "string", ["description"] = "要记的内容" },
+                            },
+                            ["required"] = new JArray("text"),
+                        },
+                    },
+                },
+            };
+        }
+
         private async Task ReflectAsync()
         {
             try
