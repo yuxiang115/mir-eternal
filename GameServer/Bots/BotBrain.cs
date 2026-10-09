@@ -1469,7 +1469,9 @@ namespace GameServer.Bots
                 if (monster == null || monster.Died)
                     continue;
                 var distance = player.GetDistance(monster);
-                if (distance > BotManager.Config.Reflex.ChaseMaxDistance)
+                // 选怪半径必须小于放弃阈值:原来都用12,选到12格的怪它挪一步就13格,
+                // 进战斗第一帧就"追不上放弃"(全程没追过) —— 留3格追赶余量
+                if (distance > BotManager.Config.Reflex.ChaseMaxDistance - 3)
                     continue;
                 // 别去碰明显打不过的(怪物等级远高于自己)
                 if (monster.CurrentLevel > player.CurrentLevel + 10)
@@ -1588,8 +1590,67 @@ namespace GameServer.Bots
             }
             else
             {
-                StepToward(player, target.CurrentPosition);
+                // 追击必须 A* 绕障:贪心直走遇墙会沿墙来回滑,永远绕不过去 ——
+                // 实测目标隔墙12格,bot 贴墙振荡到超距,打出2000+次"追不上放弃"(怪:明明追得上)
+                StepAlongChase(player, target);
             }
+        }
+
+        /// <summary>追击步进:沿 A* 路径走,目标挪窝超3格重算;无路可算(超预算/同格)退化直走。</summary>
+        private LinkedList<Point> _chasePath;
+        private Point? _chasePathFor;
+        private void StepAlongChase(PlayerObject player, MapObject target)
+        {
+            if (_chasePathFor == null || Chebyshev(target.CurrentPosition, _chasePathFor.Value) > 3 || (_chasePath != null && _chasePath.Count == 0))
+            {
+                _chasePathFor = target.CurrentPosition;
+                try
+                {
+                    var path = BotPathfinder.FindPath(player.CurrentMap, player.CurrentPosition, _chasePathFor.Value);
+                    _chasePath = path != null ? new LinkedList<Point>(path) : null;
+                }
+                catch
+                {
+                    _chasePath = null;
+                }
+            }
+
+            if (_chasePath != null)
+            {
+                while (_chasePath.First != null && player.CurrentPosition == _chasePath.First.Value)
+                    _chasePath.RemoveFirst();
+
+                if (_chasePath.First != null)
+                {
+                    var next = _chasePath.First.Value;
+                    var ahead = _chasePath.First.Next != null ? _chasePath.First.Next.Value : next;
+                    if (Chebyshev(player.CurrentPosition, ahead) >= 2 && player.CanRun())
+                    {
+                        var dir = ComputingClass.GetDirection(player.CurrentPosition, ahead);
+                        var s1 = ComputingClass.前方坐标(player.CurrentPosition, dir, 1);
+                        var s2 = ComputingClass.前方坐标(player.CurrentPosition, dir, 2);
+                        if (player.CurrentMap.CanPass(s1) && player.CurrentMap.CanPass(s2))
+                        {
+                            player.玩家角色跑动(s2);
+                            return;
+                        }
+                    }
+                    if (player.CanMove())
+                    {
+                        var dir = ComputingClass.GetDirection(player.CurrentPosition, next);
+                        var front = ComputingClass.前方坐标(player.CurrentPosition, dir, 1);
+                        if (player.CurrentMap.CanPass(front))
+                        {
+                            player.OnWalk(front);
+                            return;
+                        }
+                    }
+                    _chasePathFor = null; // 路径点被占上不去,下一 tick 重算
+                    return;
+                }
+            }
+
+            StepToward(player, target.CurrentPosition);
         }
 
         private void ReflexFollow(PlayerObject player)
