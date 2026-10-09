@@ -73,7 +73,9 @@ namespace GameServer.Bots
                 Tool("goto_map", "走到传送门去另一张地图(观察里的[出口]写了这张图能去哪)。练级点不对/怪太菜/想去打宝就换图。",
                     Param("map", "string", "目标地图名(看观察里出口的目的地)")),
                 Tool("list_quests", "查看自己接了哪些任务(还没交的)。"),
-                Tool("buy_item", "去村里商店买东西(主要是红药蓝药:练级前看药够不够,不够就来买,钱要够)。",
+                Tool("learn_skill", "读背包里的技能书学新技能(书可以买、也可以打怪爆)。不写名字就把背包里第一本能读的书读了。学会的技能要多用才熟练(熟练度自动涨),道士的召唤技能学了用出来就有宝宝了。",
+                    Param("name", "string", "技能书名字(可空)", required: false)),
+                Tool("buy_item", "去村里商店买东西(红药蓝药/技能书:练级前看药够不够,不够就来买;商店有本职业技能书就买来学)。",
                     Param("name", "string", "物品名(如 金创药/魔法药,写一部分也行)"),
                     Param("count", "integer", "买几个", required: false)),
                 Tool("update_relation", "更新你对某个玩家的关系认知:是朋友还是仇人,好感多少。被坑了记仇,受过恩记情 —— 这决定你以后怎么对他。",
@@ -237,6 +239,8 @@ namespace GameServer.Bots
                         return "已退出队伍";
                     case "goto_map":
                         return GotoMap(brain, args["map"]?.ToString());
+                    case "learn_skill":
+                        return LearnSkill(brain, args["name"]?.ToString());
                     case "buy_item":
                         return BuyItem(brain, args["name"]?.ToString(), Math.Max(1, Math.Min(20, args["count"]?.Value<int?>() ?? 5)));
                     case "list_quests":
@@ -541,6 +545,27 @@ namespace GameServer.Bots
             brain.Player.申请创建队伍(target.CharacterData.CharId, 0);
             BotLogger.Log(brain.Definition.Name, "act", "team_invite → " + playerName);
             return "已向 " + playerName + " 发出组队邀请";
+        }
+
+        /// <summary>读背包里的技能书学技能(UseItem 即学,服务器消耗书并学会)。</summary>
+        private static string LearnSkill(BotBrain brain, string bookName)
+        {
+            bookName = (bookName ?? "").Trim();
+            var player = brain.Player;
+            foreach (var item in player.Backpack.Values)
+            {
+                if (item == null || item.物品模板 == null || item.物品类型 != ItemType.技能书籍)
+                    continue;
+                var template = item.物品模板.Name ?? "";
+                if (bookName.Length > 0 && !template.Contains(bookName))
+                    continue;
+                if (player.MainSkills表.ContainsKey(item.SkillId))
+                    continue; // 已学过,找下一本
+                player.UseItem(1, item.物品位置.V);
+                BotLogger.Log(brain.Definition.Name, "act", "learn_skill: " + template);
+                return "读了 " + template + ",学会新技能!多放多用涨熟练(用 check_skills 看学了啥)";
+            }
+            return bookName.Length > 0 ? "背包里没有「" + bookName + "」或已学过" : "背包里没有可读的技能书(商店买或打怪爆)";
         }
 
         private static string BuyItem(BotBrain brain, string name, int count)

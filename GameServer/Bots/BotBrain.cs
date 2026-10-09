@@ -156,7 +156,9 @@ namespace GameServer.Bots
             "8. 血低系统自动喝药,死了会自动复活,别一惊一乍。\n" +
             "9. **答应别人将来的事(几点、和谁、干什么)必须调 make_plan 登记** —— 到点系统会提醒你,重启也不忘;办完调 plan_done 销掉。观察里 [待办] 是你惦记的事,[⏰该兑现了] 就是现在,立刻主动去找人、密聊、出发,别干等着。\n" +
             "10. 组队别光嘴上说:调 team_invite 真发邀请。交易用 give_gold 转账或 drop_item 丢地上让对方捡(传奇规矩)。全服收货卖货用 shout(一次1000金币,值不值自己掂量)。打怪想放特定技能(群攻/毒/治疗)先 check_skills 再 use_skill。\n" +
-            "11. **要有自己的盘算**:没目标就 set_goal 立一个(练级/攒钱/搞装备/交朋友),做事围着目标转;不知道这等级该去哪、觉得练得慢,先 check_guide 查攻略再定计划;去哪练、怎么分工,可以和朋友商量着来(商量也是玩的一部分)。目标达成了/不想要了 drop_goal。\n\n";
+            "11. **技能是练出来的**:打怪掉/商店买的技能书用 learn_skill 读了学,学了要多放(use_skill,熟练度越用越高);道士的召唤技能学完放出来就有宝宝帮你打;check_skills 随时看你都会啥。别一辈子只会普攻。\n" +
+            "12. **组队就像传奇当年的队**:跟紧队长别乱跑(系统会自动跟),打队伍正在打的怪;队长照顾落下的队友。一起走、一起打、爆了东西说一声。\n" +
+            "13. **要有自己的盘算**:没目标就 set_goal 立一个(练级/攒钱/搞装备/交朋友),做事围着目标转;不知道这等级该去哪、觉得练得慢,先 check_guide 查攻略再定计划;去哪练、怎么分工,可以和朋友商量着来(商量也是玩的一部分)。目标达成了/不想要了 drop_goal。\n\n";
 
         private string BuildSystemPrompt()
         {
@@ -821,11 +823,15 @@ namespace GameServer.Bots
                 var posBefore = player.CurrentPosition;
                 if (!ReflexCombat(player))
                 {
-                    // 赶路/跟随时被怪缠住(硬直到走不动)先清掉贴脸的怪再走 —— 玩家的自然反应
-                    if (!ReflexClearWay(player))
+                    // 队伍协同优先于个人挂机:跟着队长走、打队伍的怪 —— 传奇组队就该一起行动
+                    if (!ReflexTeam(player))
                     {
-                        if (!ReflexGrind(player))
-                            ReflexFollow(player);
+                        // 赶路/跟随时被怪缠住(硬直到走不动)先清掉贴脸的怪再走
+                        if (!ReflexClearWay(player))
+                        {
+                            if (!ReflexGrind(player))
+                                ReflexFollow(player);
+                        }
                     }
                 }
                 ReflexMove(player);
@@ -935,6 +941,63 @@ namespace GameServer.Bots
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// 队伍协同:组队里就跟着队长走、集火队长正在打的怪（一起打一只，不各自跑各自的）。
+        /// 队长自己照常行动，但队友落得太远会停下等一等。未组队或自己有其它意图(跟人/赶路)时不接管。
+        /// </summary>
+        private bool ReflexTeam(PlayerObject player)
+        {
+            if (player.Team == null)
+                return false;
+            // 自己有明确意图时以意图为先(跟某人/赶路去另一张图)，队伍逻辑不抢权
+            if (FollowTargetId != 0 || MoveTarget != null || _pendingGate != null)
+                return false;
+
+            var leaderChar = player.Team.队长数据;
+            var isLeader = leaderChar == player.CharacterData;
+            PlayerObject leader = null;
+            if (!isLeader)
+                leader = leaderChar.ActiveConnection?.Player;
+
+            if (isLeader)
+            {
+                // 队长:队友最远超过 12 格就原地等一下，别把人丢了
+                foreach (var member in player.Team.Members)
+                {
+                    var mate = member.ActiveConnection?.Player;
+                    if (mate == null || mate == player)
+                        continue;
+                    if (mate.CurrentMap != player.CurrentMap || player.GetDistance(mate) > 12)
+                        return true; // 占住本 tick，不进入个人挂机（站定等人）
+                }
+                return false; // 队叏都在身边，队长正常挂机
+            }
+
+            if (leader == null || leader.Died || leader.CurrentMap != player.CurrentMap)
+                return false; // 队长不在线/异图，回退为个人行动
+
+            // 队员:队长是 bot 且正在打怪、够近 → 集火同一只(传奇的一起打)；真人队长拿不到意图，就纯跟随
+            var leaderBrain = BotManager.FindBrain(leader.ObjectName);
+            if (leaderBrain != null && leaderBrain.CombatTargetId != 0)
+            {
+                MapObject t;
+                if (MapGatewayProcess.Objects.TryGetValue(leaderBrain.CombatTargetId, out t) && !t.Died && player.GetDistance(t) <= 12)
+                {
+                    CombatTargetId = t.ObjectId;
+                    return false; // 下一 tick ReflexCombat 接手；本 tick 先往怪身上走
+                }
+            }
+
+            // 没有共同目标:跟紧队长(超过 4 格就追)
+            var distance = player.GetDistance(leader);
+            if (distance > 4)
+            {
+                StepToward(player, leader.CurrentPosition);
+                return true;
+            }
+            return true; // 在队长身边待命，不自己乱跑
         }
 
         /// <summary>赶路/跟随时清路:贴脸的敌对怪先打掉(它们打断移动冷却,不清就永远走不动),打完自动继续原路。</summary>
