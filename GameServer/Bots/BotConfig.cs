@@ -119,7 +119,7 @@ namespace GameServer.Bots
         /// <summary>执行轮推理档位(打怪/闲聊等常规决策,快而省)。为空则用 ExtraBody 里的值。</summary>
         public string ReasoningEffortFast = "low";
         /// <summary>计划轮推理档位(定目标/兑现承诺/重大事件/被问复杂问题,想深一点)。</summary>
-        public string ReasoningEffortPlan = "medium";
+        public string ReasoningEffortPlan = "low"; // 统一:切换effort会碎缓存
     }
 
     /// <summary>人物卡:让机器人像一个有来处、有性格、有自己目标的老玩家。</summary>

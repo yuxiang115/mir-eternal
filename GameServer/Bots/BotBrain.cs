@@ -453,6 +453,12 @@ namespace GameServer.Bots
                 _conversation.Add(new LlmMessage("user", observation));
                 try
                 {
+                    // 心跳保温:距上次调用>90秒时先发一个1-token请求刷新缓存,
+                    // 让正式请求能命中(成本≈1个output token,换来25k input按缓存价计费)
+                    var sinceLastCall = DateTime.Now - _lastLlmCallAt;
+                    if (sinceLastCall.TotalSeconds > 90 && _conversation.Count > 2)
+                        await SendHeartbeat(llm);
+
                     var result = await LlmClient.ChatAsync(llm, _conversation, BotToolCatalog.Definitions, effort);
                     _llmFailures = 0;
 
@@ -503,9 +509,20 @@ namespace GameServer.Bots
                         : string.Join("; ", result.ToolCalls.Select(c => c.Name + "(" + c.Arguments.ToString(Formatting.None) + ")"));
 
                     // 缓存命中率观测:命中部分成本约为未命中的1/10,低了就该查前缀稳定性
-                    if (result.CacheHitTokens + result.CacheMissTokens > 0)
-                        MainProcess.AddSystemLog("[Bot缓存] " + Definition.Name + " 命中 " + result.CacheHitTokens + " / 未命中 " + result.CacheMissTokens
-                            + " (" + (result.CacheHitTokens * 100 / (result.CacheHitTokens + result.CacheMissTokens)) + "%)");
+                    _lastLlmCallAt = DateTime.Now;
+                    var inTotal = result.CacheHitTokens + result.CacheMissTokens;
+                    if (inTotal > 0)
+                    {
+                        var hitPct = result.CacheHitTokens * 100 / inTotal;
+                        MainProcess.AddSystemLog("[Bot缓存] " + Definition.Name
+                            + " input=" + inTotal
+                            + " hit=" + result.CacheHitTokens
+                            + " miss=" + result.CacheMissTokens
+                            + " (" + hitPct + "%)"
+                            + (hitPct < 50 ? " ⚠️冷启动" : ""));
+                        BotLogger.Log(Definition.Name, "cache",
+                            "in=" + inTotal + " hit=" + result.CacheHitTokens + " miss=" + result.CacheMissTokens + " (" + hitPct + "%)");
+                    }
 
                     // 空轮(没动作、没被搭话、也没新事件):这轮观察不入历史 ——
                     // 否则上下文会被"继续挂机/无事"的垃圾轮淹没,决策质量随之下滑
@@ -1166,6 +1183,41 @@ namespace GameServer.Bots
             }
         }
 
+        /// <summary>
+        /// 心跳保温:用当前对话前缀发一个 max_tokens=1 的请求,刷新 DeepSeek 缓存的 LRU 计数器。
+        /// 成本 = 1 个 output token + input 按缓存价(上次调用的miss已写入缓存,这次大概率hit)。
+        /// 不加这个,3-7分钟空闲后正式请求要全量 miss(25k tokens 全价)。
+        /// </summary>
+        private async Task SendHeartbeat(BotLlmConfig llm)
+        {
+            try
+            {
+                var heartbeatMessages = new List<LlmMessage>
+                {
+                    _conversation[0], // system(前缀主体)
+                    _conversation[_conversation.Count - 1], // 最后一轮(保证前缀一致)
+                };
+                var hbConfig = new BotLlmConfig
+                {
+                    BaseUrl = llm.BaseUrl,
+                    ApiKey = llm.ApiKey,
+                    Model = llm.Model,
+                    Temperature = llm.Temperature,
+                    MaxTokens = 1, // 只要1个token
+                    TimeoutSeconds = 15,
+                    ExtraBody = null, // 不带 thinking(更便宜)
+                };
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                await LlmClient.ChatAsync(hbConfig, heartbeatMessages, null);
+                _lastLlmCallAt = DateTime.Now;
+                BotLogger.Log(Definition.Name, "cache", "心跳保温 " + sw.ElapsedMilliseconds + "ms");
+            }
+            catch
+            {
+                // 心跳失败无所谓,正式请求照样发
+            }
+        }
+
         public bool HasAnyPotion()
         {
             var p = Player;
@@ -1511,6 +1563,7 @@ namespace GameServer.Bots
         /// <summary>本轮目的地的路径是否已重算过一次(重算后仍卡才放弃)。</summary>
         private bool _pathRetried;
         private DateTime _lastRepathLog;
+        private DateTime _lastLlmCallAt = DateTime.MinValue;
         private int _lastMapInfoInjected = -1;
 
         /// <summary>设定"走到某扇门然后过图"的路线(打断当前意图)。</summary>
