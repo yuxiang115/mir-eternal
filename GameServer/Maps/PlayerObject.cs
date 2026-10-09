@@ -14249,12 +14249,12 @@ namespace GameServer.Maps
             {
                 using (BinaryWriter binaryWriter3 = new BinaryWriter(memoryStream3))
                 {
-                    binaryWriter3.Write(0);
-                    binaryWriter3.Write(0);
+                    binaryWriter3.Write(this.ObjectId);
+                    binaryWriter3.Write(this.CharacterData.CharId);
                     binaryWriter3.Write(1);
                     binaryWriter3.Write((int)this.CurrentLevel);
                     binaryWriter3.Write(Encoding.UTF8.GetBytes(message + '\0'));
-                    binaryWriter3.Write(String.Empty);
+                    binaryWriter3.Write(Encoding.UTF8.GetBytes(this.ObjectName));
                     binaryWriter3.Write((byte)0);
                     ActiveConnection?.SendPacket(new ReceiveChatMessagesPacket
                     {

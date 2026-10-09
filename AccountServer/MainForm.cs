@@ -41,6 +41,16 @@ namespace AccountServer
 
             _stats.StatsChanged += Envir_StatsChanged;
 
+            // 自动启动(无人值守):窗体一显示就自动点"启动",不再依赖人手点按钮;放 .noautostart 文件可改回手动
+            base.Shown += async delegate
+            {
+                if (System.IO.File.Exists(".noautostart"))
+                    return;
+                await System.Threading.Tasks.Task.Delay(500);
+                _logger.LogInformation("Auto-starting account server (.noautostart to disable)...");
+                Start_Click(null, null);
+            };
+
             txtTSPort.Value = _config.LoginGatePort;
             txtASPort.Value = _config.AccountServerPort;
 
