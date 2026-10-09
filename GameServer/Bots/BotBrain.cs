@@ -974,6 +974,7 @@ namespace GameServer.Bots
                 _lastReflexTime = MainProcess.CurrentTime.AddMilliseconds(BotManager.Config.Reflex.ActIntervalMs);
 
                 ReflexPotion(player);
+                ReflexFleeIfDying(player);
                 var posBefore = player.CurrentPosition;
                 if (!ReflexCombat(player))
                 {
@@ -1052,7 +1053,16 @@ namespace GameServer.Bots
             var maxMp = player[GameObjectStats.MaxMP];
             var reflex = BotManager.Config.Reflex;
 
-            if (maxHp > 0 && player.CurrentHP * 100 / maxHp < reflex.AutoPotionHpPercent)
+            // 动态喝药:怪越强喝越早(真人打boss提前嗑药,打羊血低再喝)
+            var threshold = reflex.AutoPotionHpPercent;
+            if (CombatTargetId != 0 && MapGatewayProcess.Objects.TryGetValue(CombatTargetId, out var potionThreat) && !potionThreat.Died)
+            {
+                var levelDiff = potionThreat.CurrentLevel - player.CurrentLevel;
+                if (levelDiff >= 3) threshold = Math.Max(threshold, 75);
+                else if (levelDiff >= 0) threshold = Math.Max(threshold, 65);
+            }
+
+            if (maxHp > 0 && player.CurrentHP * 100 / maxHp < threshold)
             {
                 if (!DrinkPotion("hp"))
                     WarnNoPotion("红");
@@ -1073,6 +1083,45 @@ namespace GameServer.Bots
             lock (ToolResults)
                 ToolResults.Add("!!!" + kind + "药喝完了,一瓶都不剩,再打要出人命 —— 赶紧 buy_item 买药(看看金币够不够)");
             _nextThinkTime = MainProcess.CurrentTime;
+        }
+
+        /// <summary>濒死且没药:真人会跑 — 放弃战斗,朝远离目标方向逃8格。</summary>
+        private void ReflexFleeIfDying(PlayerObject player)
+        {
+            if (player.Died) return;
+            var maxHp = player[GameObjectStats.MaxHP];
+            if (maxHp <= 0 || player.CurrentHP * 100 / maxHp >= 25 || HasAnyPotion()) return;
+            if (CombatTargetId == 0 && !AutoGrind) return;
+
+            var fleeFrom = player.CurrentPosition;
+            if (CombatTargetId != 0 && MapGatewayProcess.Objects.TryGetValue(CombatTargetId, out var threat) && !threat.Died)
+                fleeFrom = threat.CurrentPosition;
+
+            CombatTargetId = 0;
+            AutoGrind = false;
+            var dx = player.CurrentPosition.X - fleeFrom.X;
+            var dy = player.CurrentPosition.Y - fleeFrom.Y;
+            if (dx == 0 && dy == 0) dx = 1;
+            var len = Math.Max(Math.Abs(dx), Math.Abs(dy));
+            var fleeTo = new Point(player.CurrentPosition.X + dx * 8 / len, player.CurrentPosition.Y + dy * 8 / len);
+            if (player.CurrentMap.CanPass(fleeTo))
+            {
+                RebuildPath(fleeTo);
+                MoveTarget = fleeTo;
+                BotLogger.Log(Definition.Name, "event", "濒死逃跑!(" + player.CurrentHP + "/" + maxHp + ") → (" + fleeTo.X + "," + fleeTo.Y + ")");
+            }
+        }
+
+        public bool HasAnyPotion()
+        {
+            var p = Player;
+            if (p == null) return true;
+            foreach (var id in BotManager.Config.Reflex.HpPotionIds)
+            {
+                ItemData item;
+                if (p.查找背包物品(id, out item)) return true;
+            }
+            return false;
         }
 
         public bool DrinkPotion(string kind)
@@ -1238,6 +1287,9 @@ namespace GameServer.Bots
                 // 别去碰明显打不过的(怪物等级远高于自己)
                 if (monster.CurrentLevel > player.CurrentLevel + 10)
                     continue;
+                var mobMaxHp = monster[GameObjectStats.MaxHP];
+                if (mobMaxHp > 0 && player[GameObjectStats.MaxHP] > 0 && mobMaxHp > player[GameObjectStats.MaxHP] * 5)
+                    continue; // 怪血是自己5倍以上:打不动(会被反杀)
                 var score = Math.Max(1, (int)monster.CurrentLevel) * 10 - distance;
                 if (score > bestScore)
                 {

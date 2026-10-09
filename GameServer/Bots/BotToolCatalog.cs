@@ -315,10 +315,10 @@ namespace GameServer.Bots
 
             // 节流:两个机器人互相搭话时防止说个不停,15秒内只让一句出去(被私聊回复不限)
             var sinceSay = MainProcess.CurrentTime - brain.LastSayTime;
-            if (sinceSay.TotalSeconds < 15 && !brain.IsReplying)
+            if (sinceSay.TotalSeconds < 8 && !brain.IsReplying)
             {
                 BotLogger.Log(brain.Definition.Name, "event", "说话被节流(15秒内): " + text.Substring(0, Math.Min(20, text.Length)));
-                return "刚说过话,歇会儿(" + (int)(15 - sinceSay.TotalSeconds) + "秒)";
+                return "刚说过话,歇会儿(" + (int)(8 - sinceSay.TotalSeconds) + "秒)";
             }
             brain.LastSayTime = MainProcess.CurrentTime;
 
