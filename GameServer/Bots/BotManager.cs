@@ -425,7 +425,8 @@ namespace GameServer.Bots
 
             brain.Memory.StartupKitGranted = true;
 
-            // 合规清理:移掉不该在身上的装备(等级/职业/性别不符,或本钱还配不上的贵重货 —— 神器要自己攒)
+            // 合规清理:移掉不该在身上的装备(等级/职业/性别不符)。
+            // 不按价格清 —— 新号自带的职业铭文装(骨玉/银蛇级)就是这服的新手起步装,别误清。
             foreach (var item in player.Backpack.Values.ToList())
             {
                 var equip = item?.物品模板 as EquipmentItem;
@@ -433,8 +434,7 @@ namespace GameServer.Bots
                     continue;
                 var inappropriate = equip.NeedLevel > player.CurrentLevel
                     || equip.NeedGender != GameObjectGender.不限 && equip.NeedGender != player.CharGender
-                    || equip.NeedRace != GameObjectRace.通用 && equip.NeedRace != player.CharRole
-                    || equip.SalePrice > 30000;
+                    || equip.NeedRace != GameObjectRace.通用 && equip.NeedRace != player.CharRole;
                 if (inappropriate)
                 {
                     player.Backpack.Remove(item.物品位置.V);
@@ -443,44 +443,18 @@ namespace GameServer.Bots
                 }
             }
 
+            // 装备不发:这服新号自带职业铭文装(就是新手起步装),好装备自己打、钱自己挣。
+            // StartingGold 封顶 5000(买几组药的起步钱),财富靠挣。
+
             if (definition.StartingGold > 0)
             {
-                player.NumberGoldCoins += definition.StartingGold;
-                MainProcess.AddSystemLog("[Bot] " + definition.Name + " 领取启动资金 " + definition.StartingGold + " 金币");
+                // 成长性:起步资金就是买几组药的钱,封顶5000,财富靠挣
+                var gold = Math.Min(definition.StartingGold, 5000);
+                player.NumberGoldCoins += gold;
+                MainProcess.AddSystemLog("[Bot] " + definition.Name + " 领取起步资金 " + gold + " 金币");
             }
 
-            if (definition.StartingGear)
-            {
-                foreach (var slot in new[] { ItemType.武器, ItemType.衣服 })
-                {
-                    // 主属性按职业排:战士系看攻击,法师看魔法,道士看道术;等级匹配±12级防神器;性别限制
-                    var race = player.CharRole;
-                    Func<EquipmentItem, int> mainStat =
-                        race == GameObjectRace.法师 ? (Func<EquipmentItem, int>)(e => e.MaxMC) :
-                        race == GameObjectRace.道士 ? (e => e.MaxSC) : (e => e.MaxDC);
-
-                    var candidates = GameItems.DataSheet.Values
-                        .OfType<EquipmentItem>()
-                        .Where(e => e.Type == slot
-                                    && e.NeedLevel <= player.CurrentLevel
-                                    && e.NeedLevel >= Math.Max(1, player.CurrentLevel - 12)
-                                    && (e.NeedRace == GameObjectRace.通用 || e.NeedRace == race)
-                                    && (e.NeedGender == GameObjectGender.不限 || e.NeedGender == player.CharGender)
-                                    && e.SalePrice <= 30000) // 神器不发,自己攒钱追求去
-                        .OrderBy(mainStat)
-                        .ToList();
-                    // 平民中位数档:不选最强(那是屠龙级的目标),也不选最破,像系统商店里的寻常货
-                    var best = candidates.Count > 0 ? candidates[candidates.Count / 2] : null;
-                    if (best == null)
-                        continue;
-
-                    byte position;
-                    if (!player.CharacterData.TryGetFreeSpaceAtInventory(out position))
-                        break;
-                    player.GainItem(best, position, 1);
-                    MainProcess.AddSystemLog("[Bot] " + definition.Name + " 获得初始" + slot + ": " + best.Name);
-                }
-            }
+            // StartingGear 分支已移除:装备靠新号自带的职业铭文装起步,成长靠打
             brain.MemoryDirty = true;
         }
 

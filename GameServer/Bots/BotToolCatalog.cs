@@ -73,6 +73,9 @@ namespace GameServer.Bots
                 Tool("goto_map", "走到传送门去另一张地图(观察里的[出口]写了这张图能去哪)。练级点不对/怪太菜/想去打宝就换图。",
                     Param("map", "string", "目标地图名(看观察里出口的目的地)")),
                 Tool("list_quests", "查看自己接了哪些任务(还没交的)。"),
+                Tool("buy_item", "去村里商店买东西(主要是红药蓝药:练级前看药够不够,不够就来买,钱要够)。",
+                    Param("name", "string", "物品名(如 金创药/魔法药,写一部分也行)"),
+                    Param("count", "integer", "买几个", required: false)),
                 Tool("update_relation", "更新你对某个玩家的关系认知:是朋友还是仇人,好感多少。被坑了记仇,受过恩记情 —— 这决定你以后怎么对他。",
                     Param("player", "string", "玩家名"),
                     Param("relation", "string", "路人/熟人/朋友/兄弟/仇人"),
@@ -234,6 +237,8 @@ namespace GameServer.Bots
                         return "已退出队伍";
                     case "goto_map":
                         return GotoMap(brain, args["map"]?.ToString());
+                    case "buy_item":
+                        return BuyItem(brain, args["name"]?.ToString(), Math.Max(1, Math.Min(20, args["count"]?.Value<int?>() ?? 5)));
                     case "list_quests":
                         return ListQuests(brain);
                     case "update_relation":
@@ -537,6 +542,37 @@ namespace GameServer.Bots
             brain.Player.申请创建队伍(target.CharacterData.CharId, 0);
             BotLogger.Log(brain.Definition.Name, "act", "team_invite → " + playerName);
             return "已向 " + playerName + " 发出组队邀请";
+        }
+
+        private static string BuyItem(BotBrain brain, string name, int count)
+        {
+            name = (name ?? "").Trim();
+            if (name.Length == 0)
+                return "没写买什么";
+
+            // 全服商店找货:名字模糊匹配 + 钱够
+            foreach (var store in GameStore.DataSheet.Values)
+            {
+                for (var slot = 0; slot < store.Products.Count; slot++)
+                {
+                    var product = store.Products[slot];
+                    GameItems template;
+                    if (product == null || !GameItems.DataSheet.TryGetValue(product.Id, out template))
+                        continue;
+                    if (template.Name == null || !template.Name.Contains(name))
+                        continue;
+
+                    var player = brain.Player;
+                    var cost = product.Price * count;
+                    if (player.NumberGoldCoins < cost)
+                        return "钱不够: " + template.Name + " 单价" + product.Price + ",买" + count + "个要" + cost + "(你有" + player.NumberGoldCoins + ")";
+
+                    player.玩家购买物品(store.StoreId, slot, (ushort)count);
+                    BotLogger.Log(brain.Definition.Name, "act", "buy_item: " + template.Name + "x" + count + " 花" + cost);
+                    return "买了 " + template.Name + " x" + count + ",花了" + cost + "金币";
+                }
+            }
+            return "商店里没有「" + name + "」";
         }
 
         private static string GotoMap(BotBrain brain, string mapName)

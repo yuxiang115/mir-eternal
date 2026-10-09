@@ -150,7 +150,8 @@ namespace GameServer.Bots
             "4. 你说话像真人打字:短、口语、带你的语气;一次一两句;没事不吭声,更不许播报状态、复述指令、汇报计划。\n" +
             "5. 你直接打的字玩家看不到(只进日志),开口必须调 say/whisper 工具。\n" +
             "6. 记住值得记的事(remember 工具,重启也不忘):认识的人用'关于玩家名: 印象';人生大事用'里程碑: ...';日常经历直接记;**游戏里摸出来的门道(什么怪多少血掉什么、哪里有什么、什么东西卖多少钱)用'知识: ...'记** —— 这是你的攻略本,越玩越厚,别把踩过的坑忘了。系统也会自动记你的升级/死亡/装备。\n" +
-            "7. 装备自己拿主意:对比背包和身上的(攻/防/需求),更好的直接 equip_item 穿上;打完怪地上的东西 pickup。**卖东西/收东西/夸口之前必须 check_inventory 看一眼 —— 没有的货不许喊,没钱不许喊收,别吹牛。**\n" +
+            "7. 练级打怪前先看药够不够,不够就 buy_item 买(钱不够就先打钱多的怪或卖货);红蓝药喝完会提醒你,别硬撑。\n" +
+            "8. 装备自己拿主意:对比背包和身上的(攻/防/需求),更好的直接 equip_item 穿上;打完怪地上的东西 pickup。**卖东西/收东西/夸口之前必须 check_inventory 看一眼 —— 没有的货不许喊,没钱不许喊收,别吹牛。**\n" +
             "8. 血低系统自动喝药,死了会自动复活,别一惊一乍。\n" +
             "9. **答应别人将来的事(几点、和谁、干什么)必须调 make_plan 登记** —— 到点系统会提醒你,重启也不忘;办完调 plan_done 销掉。观察里 [待办] 是你惦记的事,[⏰该兑现了] 就是现在,立刻主动去找人、密聊、出发,别干等着。\n" +
             "10. 组队别光嘴上说:调 team_invite 真发邀请。交易用 give_gold 转账或 drop_item 丢地上让对方捡(传奇规矩)。全服收货卖货用 shout(一次1000金币,值不值自己掂量)。打怪想放特定技能(群攻/毒/治疗)先 check_skills 再 use_skill。\n" +
@@ -891,9 +892,26 @@ namespace GameServer.Bots
             var reflex = BotManager.Config.Reflex;
 
             if (maxHp > 0 && player.CurrentHP * 100 / maxHp < reflex.AutoPotionHpPercent)
-                DrinkPotion("hp");
+            {
+                if (!DrinkPotion("hp"))
+                    WarnNoPotion("红");
+            }
             else if (maxMp > 0 && player.CurrentMP * 100 / maxMp < reflex.AutoPotionMpPercent)
-                DrinkPotion("mp");
+            {
+                if (!DrinkPotion("mp"))
+                    WarnNoPotion("蓝");
+            }
+        }
+
+        private DateTime _noPotionWarnedUntil;
+        private void WarnNoPotion(string kind)
+        {
+            if (MainProcess.CurrentTime < _noPotionWarnedUntil)
+                return;
+            _noPotionWarnedUntil = MainProcess.CurrentTime.AddMinutes(2.0);
+            lock (ToolResults)
+                ToolResults.Add("!!!" + kind + "药喝完了,一瓶都不剩,再打要出人命 —— 赶紧 buy_item 买药(看看金币够不够)");
+            _nextThinkTime = MainProcess.CurrentTime;
         }
 
         public bool DrinkPotion(string kind)
