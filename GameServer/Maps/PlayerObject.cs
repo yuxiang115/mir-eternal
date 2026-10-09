@@ -15506,15 +15506,33 @@ namespace GameServer.Maps
                             SConnection 客户网络;
                             if (CharacterData.CurrentTeam == null)
                             {
+                                // 玩家直接点"邀请组队"(对方也没队):自动为邀请人建队,再发邀请 —— 不再要求先手动建队
+                                this.Team = new TeamData(this.CharacterData, 1);
                                 SConnection 网络连接2 = this.ActiveConnection;
-                                if (网络连接2 == null)
+                                if (网络连接2 != null)
+                                    网络连接2.SendPacket(new 玩家加入队伍 { 字节描述 = this.Team.队伍描述() });
+                                SConnection 客户网络2;
+                                if (CharacterData.IsOnline(out 客户网络2))
                                 {
-                                    return;
+                                    this.Team.邀请列表[CharacterData] = MainProcess.CurrentTime.AddMinutes(5.0);
+                                    SConnection 网络连接9 = this.ActiveConnection;
+                                    if (网络连接9 != null)
+                                        网络连接9.SendPacket(new 社交错误提示 { 错误编号 = 3842 });
+                                    客户网络2.SendPacket(new SendTeamRequestBPacket
+                                    {
+                                        组队方式 = 0,
+                                        对象编号 = this.ObjectId,
+                                        对象职业 = (byte)this.CharRole,
+                                        对象名字 = this.ObjectName
+                                    });
+                                    GameServer.Bots.BotManager.OnTeamInviteToBot(this, CharacterData);
                                 }
-                                网络连接2.SendPacket(new 社交错误提示
+                                else
                                 {
-                                    错误编号 = 3860
-                                });
+                                    SConnection 网络连接10 = this.ActiveConnection;
+                                    if (网络连接10 != null)
+                                        网络连接10.SendPacket(new 社交错误提示 { 错误编号 = 3844 });
+                                }
                                 return;
                             }
                             else if (CharacterData.CurrentTeam.队员数量 >= 11)
@@ -15540,6 +15558,7 @@ namespace GameServer.Maps
                                     对象职业 = (byte)this.CharRole,
                                     对象名字 = this.ObjectName
                                 });
+                                GameServer.Bots.BotManager.OnTeamInviteToBot(this, CharacterData);
                                 SConnection 网络连接4 = this.ActiveConnection;
                                 if (网络连接4 == null)
                                 {
@@ -15625,6 +15644,7 @@ namespace GameServer.Maps
                                     对象职业 = (byte)this.CharRole,
                                     对象名字 = this.ObjectName
                                 });
+                                GameServer.Bots.BotManager.OnTeamInviteToBot(this, CharacterData);
                                 return;
                             }
                             SConnection 网络连接10 = this.ActiveConnection;
