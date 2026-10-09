@@ -835,25 +835,19 @@ namespace GameServer.Bots
                 ToolReplies.Clear();
         }
 
+        /// <summary>安全阀:仅当 LLM 压缩失效、历史逼近 API 上限时硬裁到 80k tokens 以下,正常永远不触发。
+        /// (v3.23 遗留的"80轮消息数裁剪"已删:26k tokens 就无声删史、每轮滑动前缀碎缓存、且与 LLM 压缩职责重复)</summary>
         private void TrimHistory()
         {
-            // 纯 append:只保留 [0]=system,其余是对话(纯截尾,无特殊位置)
-            var headCount = 1;
-            var maxMessages = headCount + BotManager.Config.MaxHistoryTurns * 2;
-            // 裁剪滞回:每裁一次=前缀整体平移=当轮全量 cache miss(实测:超过161条后每轮追加必裁,
-            // 30分钟刷出300+次26k全miss的"冷启动")。攒够一批再裁,两次裁剪之间留出十几轮纯append高命中期
-            const int slack = 40;
-            if (_conversation.Count <= maxMessages + slack)
-                return;
-
-            var kept = _conversation.Take(headCount).ToList();
-            kept.AddRange(_conversation.Skip(_conversation.Count - (maxMessages - headCount)));
-            // 切点若正好落在 assistant(tool_calls)/tool回执 组中间,会把 assistant 切掉留下孤儿回执,
-            // DeepSeek 会以 "tool must be a response to a preceding tool_calls" 永久 400 —— 补刀丢掉组头孤儿
-            while (kept.Count > headCount && string.Equals(kept[headCount].Role, "tool", StringComparison.OrdinalIgnoreCase))
-                kept.RemoveAt(headCount);
-            _conversation.Clear();
-            _conversation.AddRange(kept);
+            while (_conversation.Count > 1 && EstimateTokens() > 80000)
+            {
+                var drop = Math.Min(50, _conversation.Count - 1);
+                _conversation.RemoveRange(1, drop);
+                // 组边界对齐:裁完后头部若是孤儿 tool 回执(assistant 被裁掉)会触发 DeepSeek 400
+                while (_conversation.Count > 1 && string.Equals(_conversation[1].Role, "tool", StringComparison.OrdinalIgnoreCase))
+                    _conversation.RemoveAt(1);
+            }
+            MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 安全阀裁剪到" + _conversation.Count + "条 —— 压缩机制没接住,请查CompressHistoryAsync");
         }
 
         /// <summary>会话历史协议自愈:剔除悬空 tool 回执(前一条 assistant 缺对应 tool_calls),
@@ -980,11 +974,18 @@ namespace GameServer.Bots
         private async Task CompressHistoryAsync()
         {
             var config = BotManager.Config;
-            if (EstimateTokens() < config.CompressThresholdTokens || _conversation.Count < 8)
+            if (_conversation.Count < 8)
+                return;
+            var est = EstimateTokens();
+            if (est >= 150000)
             {
+                // 安全阀:压缩线(120k)之上还没压下去 —— 压缩机制失效/连续异常,再不放血就撞 API 200k 上限。
+                // 正常流程永远到不了这里(v3.38 之前的日常 TrimHistory 已删,上下文管理只归 LLM 压缩)
                 TrimHistory();
                 return;
             }
+            if (est < config.CompressThresholdTokens)
+                return; // 未到压缩线:不裁任何东西 —— 历史越长前缀缓存命越多,append 本身近乎免费
 
             try
             {
