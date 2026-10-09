@@ -1,0 +1,906 @@
+[
+  {
+    "class_id": "warrior",
+    "level_min": 1,
+    "level_max": 15,
+    "phase": "入门/主线",
+    "focus": "用基础近战技能补齐装备；优先做主线与低成本清怪，少打高防怪",
+    "new_skills": [
+      "基本剑术"
+    ],
+    "maps_default": [
+      "新手区",
+      "沃玛森林"
+    ],
+    "gear_goal": "武器：八荒(15)→斩马刀(20)/修罗(22)→炼狱(26)→井中月(28)→裁决(30)/怒斩(攻击门槛)→开天(43)。不是强制线性升级：铭文、攻击下限/上限、重量与价格会改变选择。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "warrior",
+    "level_min": 16,
+    "level_max": 21,
+    "phase": "基础技能成型",
+    "focus": "19级攻杀剑术后增强单体输出；比较药费与经验，先保持经济正收益",
+    "new_skills": [
+      "攻杀剑术"
+    ],
+    "maps_default": [
+      "沃玛森林",
+      "盟重省野外"
+    ],
+    "gear_goal": "武器：八荒(15)→斩马刀(20)/修罗(22)→炼狱(26)→井中月(28)→裁决(30)/怒斩(攻击门槛)→开天(43)。不是强制线性升级：铭文、攻击下限/上限、重量与价格会改变选择。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "warrior",
+    "level_min": 22,
+    "level_max": 28,
+    "phase": "练级与初阶打宝",
+    "focus": "25级学刺杀、28级学半月；刷蜈蚣洞与组队练级，争取炼狱/井中月",
+    "new_skills": [
+      "刺杀剑术",
+      "半月弯刀"
+    ],
+    "maps_default": [
+      "比奇矿区/僵尸洞",
+      "沃玛寺庙入口"
+    ],
+    "gear_goal": "武器：八荒(15)→斩马刀(20)/修罗(22)→炼狱(26)→井中月(28)→裁决(30)/怒斩(攻击门槛)→开天(43)。不是强制线性升级：铭文、攻击下限/上限、重量与价格会改变选择。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "warrior",
+    "level_min": 29,
+    "level_max": 34,
+    "phase": "30级附近成长分叉",
+    "focus": "半月群刷形成；30级野蛮冲撞用于控位，尝试装备合成与铭文",
+    "new_skills": [
+      "野蛮冲撞"
+    ],
+    "maps_default": [
+      "死亡峡谷/蜈蚣洞",
+      "石墓浅层"
+    ],
+    "gear_goal": "武器：八荒(15)→斩马刀(20)/修罗(22)→炼狱(26)→井中月(28)→裁决(30)/怒斩(攻击门槛)→开天(43)。不是强制线性升级：铭文、攻击下限/上限、重量与价格会改变选择。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "warrior",
+    "level_min": 35,
+    "level_max": 40,
+    "phase": "核心技能与觉醒",
+    "focus": "35级烈火爆发、38级控怪、39级范围、40级觉醒；参与白野猪/祖玛团队",
+    "new_skills": [
+      "烈火剑法",
+      "狮子吼",
+      "爆炎剑诀",
+      "金钟罩"
+    ],
+    "maps_default": [
+      "石墓/猪洞"
+    ],
+    "gear_goal": "武器：八荒(15)→斩马刀(20)/修罗(22)→炼狱(26)→井中月(28)→裁决(30)/怒斩(攻击门槛)→开天(43)。不是强制线性升级：铭文、攻击下限/上限、重量与价格会改变选择。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "warrior",
+    "level_min": 41,
+    "level_max": 46,
+    "phase": "高级地图、经济与组队",
+    "focus": "强化输出与生存两套装备，45级按服务器解锁雷霆；打宝积攒更高阶武器",
+    "new_skills": [
+      "雷霆剑法"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：八荒(15)→斩马刀(20)/修罗(22)→炼狱(26)→井中月(28)→裁决(30)/怒斩(攻击门槛)→开天(43)。不是强制线性升级：铭文、攻击下限/上限、重量与价格会改变选择。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "warrior",
+    "level_min": 47,
+    "level_max": 60,
+    "phase": "高阶挑战与长期目标",
+    "focus": "逐日/50觉醒为追求；打团、BOSS争夺，备魔防换装与足量补给",
+    "new_skills": [
+      "逐日剑法",
+      "天威剑法",
+      "神威盾甲"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：八荒(15)→斩马刀(20)/修罗(22)→炼狱(26)→井中月(28)→裁决(30)/怒斩(攻击门槛)→开天(43)。不是强制线性升级：铭文、攻击下限/上限、重量与价格会改变选择。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "mage",
+    "level_min": 1,
+    "level_max": 15,
+    "phase": "入门/主线",
+    "focus": "7级火球、12抗拒、13诱惑；优先低耗击杀鹿/半兽人，训练距离控制",
+    "new_skills": [
+      "火球术",
+      "抗拒火环",
+      "诱惑之光"
+    ],
+    "maps_default": [
+      "新手区",
+      "沃玛森林"
+    ],
+    "gear_goal": "武器：海魂(15)→偃月(20)→魔杖(26)→血饮(需魔法27)→骨玉权杖(35)/龙牙(需魔法28)→镇天(43)。魔法要求≠等级要求。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "mage",
+    "level_min": 16,
+    "level_max": 21,
+    "phase": "基础技能成型",
+    "focus": "17级雷电、19大火球；先换商城/掉落魔法属性装，再尝试矿区僵尸",
+    "new_skills": [
+      "地狱火",
+      "雷电术",
+      "大火球",
+      "瞬息移动"
+    ],
+    "maps_default": [
+      "沃玛森林",
+      "盟重省野外"
+    ],
+    "gear_goal": "武器：海魂(15)→偃月(20)→魔杖(26)→血饮(需魔法27)→骨玉权杖(35)/龙牙(需魔法28)→镇天(43)。魔法要求≠等级要求。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "mage",
+    "level_min": 22,
+    "level_max": 28,
+    "phase": "练级与初阶打宝",
+    "focus": "22爆裂、24火墙、26疾光，开始范围清怪和驯养宠物；用魔杖并留意血饮需求为魔法值",
+    "new_skills": [
+      "爆裂火焰",
+      "火墙",
+      "疾光电影"
+    ],
+    "maps_default": [
+      "比奇矿区/僵尸洞",
+      "沃玛寺庙入口"
+    ],
+    "gear_goal": "武器：海魂(15)→偃月(20)→魔杖(26)→血饮(需魔法27)→骨玉权杖(35)/龙牙(需魔法28)→镇天(43)。魔法要求≠等级要求。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "mage",
+    "level_min": 29,
+    "level_max": 34,
+    "phase": "30级附近成长分叉",
+    "focus": "30地狱雷光、31魔法盾是关键生存节点；适合与战士道士组队刷石墓/祖玛低层",
+    "new_skills": [
+      "地狱雷光",
+      "魔法盾",
+      "圣言术"
+    ],
+    "maps_default": [
+      "死亡峡谷/蜈蚣洞",
+      "石墓浅层"
+    ],
+    "gear_goal": "武器：海魂(15)→偃月(20)→魔杖(26)→血饮(需魔法27)→骨玉权杖(35)/龙牙(需魔法28)→镇天(43)。魔法要求≠等级要求。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "mage",
+    "level_min": 35,
+    "level_max": 40,
+    "phase": "核心技能与觉醒",
+    "focus": "35冰咆哮、38灭天火、40觉醒；准备法力/防御两套装，研究火墙与雷电铭文",
+    "new_skills": [
+      "冰咆哮",
+      "寒冰掌",
+      "灭天火",
+      "法神奥义"
+    ],
+    "maps_default": [
+      "石墓/猪洞"
+    ],
+    "gear_goal": "武器：海魂(15)→偃月(20)→魔杖(26)→血饮(需魔法27)→骨玉权杖(35)/龙牙(需魔法28)→镇天(43)。魔法要求≠等级要求。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "mage",
+    "level_min": 41,
+    "level_max": 46,
+    "phase": "高级地图、经济与组队",
+    "focus": "累积高级技能、45觉醒；打宝、练级兼顾，受威胁时先魔法盾/位移",
+    "new_skills": [
+      "元素星辰"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：海魂(15)→偃月(20)→魔杖(26)→血饮(需魔法27)→骨玉权杖(35)/龙牙(需魔法28)→镇天(43)。魔法要求≠等级要求。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "mage",
+    "level_min": 47,
+    "level_max": 60,
+    "phase": "高阶挑战与长期目标",
+    "focus": "47流星火雨、50觉醒、51魔能闪形成高级群伤和机动，优先队伍控制而非抢仇恨",
+    "new_skills": [
+      "流星火雨",
+      "魔能星陨",
+      "魔能闪"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：海魂(15)→偃月(20)→魔杖(26)→血饮(需魔法27)→骨玉权杖(35)/龙牙(需魔法28)→镇天(43)。魔法要求≠等级要求。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "taoist",
+    "level_min": 1,
+    "level_max": 15,
+    "phase": "入门/主线",
+    "focus": "学治疗、精神力与毒；战斗以低费安全为先，优先主线",
+    "new_skills": [
+      "治愈术",
+      "精神力战法",
+      "施毒术"
+    ],
+    "maps_default": [
+      "新手区",
+      "沃玛森林"
+    ],
+    "gear_goal": "武器：半月(15，兼道术)→降魔(20)→银蛇(26)→无极棍(需精神力25)→龙纹剑(35)/逍遥扇(35)→玄天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "taoist",
+    "level_min": 16,
+    "level_max": 21,
+    "phase": "基础技能成型",
+    "focus": "18火符、19骷髅、20隐身和21群隐改变生存，优先练宝宝和找低危险地图",
+    "new_skills": [
+      "灵魂火符",
+      "召唤骷髅",
+      "隐身术",
+      "集体隐身术"
+    ],
+    "maps_default": [
+      "沃玛森林",
+      "盟重省野外"
+    ],
+    "gear_goal": "武器：半月(15，兼道术)→降魔(20)→银蛇(26)→无极棍(需精神力25)→龙纹剑(35)/逍遥扇(35)→玄天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "taoist",
+    "level_min": 22,
+    "level_max": 28,
+    "phase": "练级与初阶打宝",
+    "focus": "22幽灵盾、25神圣战甲、28困魔；追银蛇/无极棍条件和耐久，开始独自探索/支援队伍",
+    "new_skills": [
+      "幽灵盾",
+      "神圣战甲术",
+      "困魔咒"
+    ],
+    "maps_default": [
+      "比奇矿区/僵尸洞",
+      "沃玛寺庙入口"
+    ],
+    "gear_goal": "武器：半月(15，兼道术)→降魔(20)→银蛇(26)→无极棍(需精神力25)→龙纹剑(35)/逍遥扇(35)→玄天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "taoist",
+    "level_min": 29,
+    "level_max": 34,
+    "phase": "30级附近成长分叉",
+    "focus": "33群疗后组队价值明显，进石墓和祖玛时先看宝宝能否稳定抗住",
+    "new_skills": [
+      "气功波",
+      "群体治愈术"
+    ],
+    "maps_default": [
+      "死亡峡谷/蜈蚣洞",
+      "石墓浅层"
+    ],
+    "gear_goal": "武器：半月(15，兼道术)→降魔(20)→银蛇(26)→无极棍(需精神力25)→龙纹剑(35)/逍遥扇(35)→玄天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "taoist",
+    "level_min": 35,
+    "level_max": 40,
+    "phase": "核心技能与觉醒",
+    "focus": "35神兽是大节点、36无极、40月灵觉醒；优先召唤铭文与道术装",
+    "new_skills": [
+      "召唤神兽",
+      "无极真气",
+      "召唤月灵"
+    ],
+    "maps_default": [
+      "石墓/猪洞"
+    ],
+    "gear_goal": "武器：半月(15，兼道术)→降魔(20)→银蛇(26)→无极棍(需精神力25)→龙纹剑(35)/逍遥扇(35)→玄天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "taoist",
+    "level_min": 41,
+    "level_max": 46,
+    "phase": "高级地图、经济与组队",
+    "focus": "增强召唤物的存活和治疗节奏，45道盾时不强追输出",
+    "new_skills": [
+      "阴阳道盾"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：半月(15，兼道术)→降魔(20)→银蛇(26)→无极棍(需精神力25)→龙纹剑(35)/逍遥扇(35)→玄天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "taoist",
+    "level_min": 47,
+    "level_max": 60,
+    "phase": "高阶挑战与长期目标",
+    "focus": "47噬血、50觉醒、51道尊；能独行也能做团队核心辅助，主动组织打宝",
+    "new_skills": [
+      "噬血术",
+      "四象之力",
+      "道尊天谕"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：半月(15，兼道术)→降魔(20)→银蛇(26)→无极棍(需精神力25)→龙纹剑(35)/逍遥扇(35)→玄天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "assassin",
+    "level_min": 1,
+    "level_max": 15,
+    "phase": "入门/主线",
+    "focus": "初期训练暴击与命中；别将刺客当坦克使用",
+    "new_skills": [
+      "暴击术",
+      "精准术"
+    ],
+    "maps_default": [
+      "新手区",
+      "沃玛森林"
+    ],
+    "gear_goal": "武器：铁柴刀(1)→双刀(13)→冰月戟(20)→追魂(26)→赤影(28)→龙爪手(需刺术37)/霜影(需刺术40)/黯灭轮(35)→破天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "assassin",
+    "level_min": 16,
+    "level_max": 21,
+    "phase": "基础技能成型",
+    "focus": "18霹雳弹提供规避，低耗单杀与收集金币优先",
+    "new_skills": [
+      "霹雳弹"
+    ],
+    "maps_default": [
+      "沃玛森林",
+      "盟重省野外"
+    ],
+    "gear_goal": "武器：铁柴刀(1)→双刀(13)→冰月戟(20)→追魂(26)→赤影(28)→龙爪手(需刺术37)/霜影(需刺术40)/黯灭轮(35)→破天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "assassin",
+    "level_min": 22,
+    "level_max": 28,
+    "phase": "练级与初阶打宝",
+    "focus": "22潜行、23毒、28鬼灵步是机动爆发节点；争取追魂与赤影",
+    "new_skills": [
+      "潜行术",
+      "致残毒药",
+      "鬼灵步"
+    ],
+    "maps_default": [
+      "比奇矿区/僵尸洞",
+      "沃玛寺庙入口"
+    ],
+    "gear_goal": "武器：铁柴刀(1)→双刀(13)→冰月戟(20)→追魂(26)→赤影(28)→龙爪手(需刺术37)/霜影(需刺术40)/黯灭轮(35)→破天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "assassin",
+    "level_min": 29,
+    "level_max": 34,
+    "phase": "30级附近成长分叉",
+    "focus": "30炎龙波、32旋风腿形成连段，适合单怪与小团",
+    "new_skills": [
+      "炎龙波",
+      "旋风腿"
+    ],
+    "maps_default": [
+      "死亡峡谷/蜈蚣洞",
+      "石墓浅层"
+    ],
+    "gear_goal": "武器：铁柴刀(1)→双刀(13)→冰月戟(20)→追魂(26)→赤影(28)→龙爪手(需刺术37)/霜影(需刺术40)/黯灭轮(35)→破天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "assassin",
+    "level_min": 35,
+    "level_max": 40,
+    "phase": "核心技能与觉醒",
+    "focus": "35冷酷保证技能链、40暗影守卫增强站桩存活；铭文改良爆发",
+    "new_skills": [
+      "冷酷",
+      "暗影守卫"
+    ],
+    "maps_default": [
+      "石墓/猪洞"
+    ],
+    "gear_goal": "武器：铁柴刀(1)→双刀(13)→冰月戟(20)→追魂(26)→赤影(28)→龙爪手(需刺术37)/霜影(需刺术40)/黯灭轮(35)→破天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "assassin",
+    "level_min": 41,
+    "level_max": 46,
+    "phase": "高级地图、经济与组队",
+    "focus": "41追魂镖和45觉醒增强抓人/清怪，需有撤退路线",
+    "new_skills": [
+      "追魂镖",
+      "魔刃天旋"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：铁柴刀(1)→双刀(13)→冰月戟(20)→追魂(26)→赤影(28)→龙爪手(需刺术37)/霜影(需刺术40)/黯灭轮(35)→破天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "assassin",
+    "level_min": 47,
+    "level_max": 60,
+    "phase": "高阶挑战与长期目标",
+    "focus": "47火镰、50猎命、51献祭形成高级爆发；择机支援团队，不做前排扛怪",
+    "new_skills": [
+      "火镰狂舞",
+      "猎命宣告",
+      "献祭"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器：铁柴刀(1)→双刀(13)→冰月戟(20)→追魂(26)→赤影(28)→龙爪手(需刺术37)/霜影(需刺术40)/黯灭轮(35)→破天(43)。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "archer",
+    "level_min": 1,
+    "level_max": 15,
+    "phase": "入门/主线",
+    "focus": "主学基础射击与命中，在广阔地形练移动射击",
+    "new_skills": [
+      "基础射击",
+      "精准打击"
+    ],
+    "maps_default": [
+      "新手区",
+      "沃玛森林"
+    ],
+    "gear_goal": "武器阶梯（仅装备名与档次可确认）：双环战弓→沉锋（祖玛档）→猎首/血染（赤月档）。具体穿戴等级、低阶名称及弓术门槛必须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "archer",
+    "level_min": 16,
+    "level_max": 21,
+    "phase": "基础技能成型",
+    "focus": "16二连射、21战术标记；对精英与强怪先标记再集火",
+    "new_skills": [
+      "二连射",
+      "战术标记"
+    ],
+    "maps_default": [
+      "沃玛森林",
+      "盟重省野外"
+    ],
+    "gear_goal": "武器阶梯（仅装备名与档次可确认）：双环战弓→沉锋（祖玛档）→猎首/血染（赤月档）。具体穿戴等级、低阶名称及弓术门槛必须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "archer",
+    "level_min": 22,
+    "level_max": 28,
+    "phase": "练级与初阶打宝",
+    "focus": "25三发散射提升多目标输出，开始关注双环战弓/沉锋阶梯和箭矢成本",
+    "new_skills": [
+      "三发散射"
+    ],
+    "maps_default": [
+      "比奇矿区/僵尸洞",
+      "沃玛寺庙入口"
+    ],
+    "gear_goal": "武器阶梯（仅装备名与档次可确认）：双环战弓→沉锋（祖玛档）→猎首/血染（赤月档）。具体穿戴等级、低阶名称及弓术门槛必须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "archer",
+    "level_min": 29,
+    "level_max": 34,
+    "phase": "30级附近成长分叉",
+    "focus": "30击飞对低级敌人有用，保持安全距离，参与组队石墓/祖玛",
+    "new_skills": [
+      "击飞射击"
+    ],
+    "maps_default": [
+      "死亡峡谷/蜈蚣洞",
+      "石墓浅层"
+    ],
+    "gear_goal": "武器阶梯（仅装备名与档次可确认）：双环战弓→沉锋（祖玛档）→猎首/血染（赤月档）。具体穿戴等级、低阶名称及弓术门槛必须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "archer",
+    "level_min": 35,
+    "level_max": 40,
+    "phase": "核心技能与觉醒",
+    "focus": "35强袭、37暗雷控场、40羿神觉醒；形成拉扯与爆发节奏",
+    "new_skills": [
+      "强袭",
+      "连环暗雷",
+      "羿神庇佑"
+    ],
+    "maps_default": [
+      "石墓/猪洞"
+    ],
+    "gear_goal": "武器阶梯（仅装备名与档次可确认）：双环战弓→沉锋（祖玛档）→猎首/血染（赤月档）。具体穿戴等级、低阶名称及弓术门槛必须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "archer",
+    "level_min": 41,
+    "level_max": 46,
+    "phase": "高级地图、经济与组队",
+    "focus": "41穿刺、45万箭；群伤避免误拉额外怪",
+    "new_skills": [
+      "穿刺射击",
+      "万箭穿心"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器阶梯（仅装备名与档次可确认）：双环战弓→沉锋（祖玛档）→猎首/血染（赤月档）。具体穿戴等级、低阶名称及弓术门槛必须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "archer",
+    "level_min": 47,
+    "level_max": 60,
+    "phase": "高阶挑战与长期目标",
+    "focus": "47凝神、50夜幕、51守护箭羽；与队伍协同远程点杀与反击",
+    "new_skills": [
+      "凝神",
+      "夜幕隐踪",
+      "守护箭羽"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器阶梯（仅装备名与档次可确认）：双环战弓→沉锋（祖玛档）→猎首/血染（赤月档）。具体穿戴等级、低阶名称及弓术门槛必须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "dragoon",
+    "level_min": 1,
+    "level_max": 15,
+    "phase": "入门/主线",
+    "focus": "基础枪术、伏波荡寇清理近身敌人",
+    "new_skills": [
+      "中平枪术",
+      "伏波荡寇"
+    ],
+    "maps_default": [
+      "新手区",
+      "沃玛森林"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：蛇牙枪→青虹（祖玛档）→虎咆/横江（赤月档）。具体等级门槛、基础属性需私服表。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "dragoon",
+    "level_min": 16,
+    "level_max": 21,
+    "phase": "基础技能成型",
+    "focus": "17横扫六合形成前方多目标清怪，控制一次拉怪量",
+    "new_skills": [
+      "横扫六合"
+    ],
+    "maps_default": [
+      "沃玛森林",
+      "盟重省野外"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：蛇牙枪→青虹（祖玛档）→虎咆/横江（赤月档）。具体等级门槛、基础属性需私服表。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "dragoon",
+    "level_min": 22,
+    "level_max": 28,
+    "phase": "练级与初阶打宝",
+    "focus": "24狂飙突刺位移、28钩镰撕裂；关注蛇牙枪/青虹武器档次",
+    "new_skills": [
+      "狂飙突刺",
+      "钩镰枪法"
+    ],
+    "maps_default": [
+      "比奇矿区/僵尸洞",
+      "沃玛寺庙入口"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：蛇牙枪→青虹（祖玛档）→虎咆/横江（赤月档）。具体等级门槛、基础属性需私服表。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "dragoon",
+    "level_min": 29,
+    "level_max": 34,
+    "phase": "30级附近成长分叉",
+    "focus": "30乾坤斗气是攻守转换核心、33团BUFF形成组队定位",
+    "new_skills": [
+      "乾坤斗气",
+      "神威镇域"
+    ],
+    "maps_default": [
+      "死亡峡谷/蜈蚣洞",
+      "石墓浅层"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：蛇牙枪→青虹（祖玛档）→虎咆/横江（赤月档）。具体等级门槛、基础属性需私服表。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "dragoon",
+    "level_min": 35,
+    "level_max": 40,
+    "phase": "核心技能与觉醒",
+    "focus": "35枪出如龙、37晶甲、40觉醒；精英战用防御体系延长生存",
+    "new_skills": [
+      "枪出如龙",
+      "御龙晶甲",
+      "盘龙枪势"
+    ],
+    "maps_default": [
+      "石墓/猪洞"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：蛇牙枪→青虹（祖玛档）→虎咆/横江（赤月档）。具体等级门槛、基础属性需私服表。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "dragoon",
+    "level_min": 41,
+    "level_max": 46,
+    "phase": "高级地图、经济与组队",
+    "focus": "41凌云追击、45百战军魂增强目标持续输出",
+    "new_skills": [
+      "凌云枪法",
+      "百战军魂"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：蛇牙枪→青虹（祖玛档）→虎咆/横江（赤月档）。具体等级门槛、基础属性需私服表。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "dragoon",
+    "level_min": 47,
+    "level_max": 60,
+    "phase": "高阶挑战与长期目标",
+    "focus": "47燃血化元、50觉醒、51龙驹形成高手套路；积极参加公会战与打宝",
+    "new_skills": [
+      "燃血化元",
+      "龙啸千里",
+      "召唤龙驹"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：蛇牙枪→青虹（祖玛档）→虎咆/横江（赤月档）。具体等级门槛、基础属性需私服表。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "demon",
+    "level_min": 1,
+    "level_max": 15,
+    "phase": "入门/主线",
+    "focus": "妖术弹、邪爪握；优先观察技能耗蓝和怪物抗性",
+    "new_skills": [
+      "妖术弹",
+      "邪爪握"
+    ],
+    "maps_default": [
+      "新手区",
+      "沃玛森林"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：祭灵杖→明心（祖玛档）→龙翼/明王（赤月档）；穿戴限制和数值须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "demon",
+    "level_min": 16,
+    "level_max": 21,
+    "phase": "基础技能成型",
+    "focus": "17灵魂冲击、20驭魂咒形成持续伤害加战魂的循环",
+    "new_skills": [
+      "灵魂冲击",
+      "驭魂咒"
+    ],
+    "maps_default": [
+      "沃玛森林",
+      "盟重省野外"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：祭灵杖→明心（祖玛档）→龙翼/明王（赤月档）；穿戴限制和数值须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "demon",
+    "level_min": 22,
+    "level_max": 28,
+    "phase": "练级与初阶打宝",
+    "focus": "26扰心咒降低魔防；低成本刷怪培养战魂，关注祭灵杖与明心档次",
+    "new_skills": [
+      "扰心咒"
+    ],
+    "maps_default": [
+      "比奇矿区/僵尸洞",
+      "沃玛寺庙入口"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：祭灵杖→明心（祖玛档）→龙翼/明王（赤月档）；穿戴限制和数值须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "demon",
+    "level_min": 29,
+    "level_max": 34,
+    "phase": "30级附近成长分叉",
+    "focus": "30妖能结晶、33魂冲开辟资源运营；结晶不够不要盲冲强怪",
+    "new_skills": [
+      "妖能化晶",
+      "魂冲咒"
+    ],
+    "maps_default": [
+      "死亡峡谷/蜈蚣洞",
+      "石墓浅层"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：祭灵杖→明心（祖玛档）→龙翼/明王（赤月档）；穿戴限制和数值须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "demon",
+    "level_min": 35,
+    "level_max": 40,
+    "phase": "核心技能与觉醒",
+    "focus": "35灭魂、37离怨、40妖力灌体提高续航，选择魔法属性和安全施法位",
+    "new_skills": [
+      "灭魂",
+      "离怨咒",
+      "妖力灌体"
+    ],
+    "maps_default": [
+      "石墓/猪洞"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：祭灵杖→明心（祖玛档）→龙翼/明王（赤月档）；穿戴限制和数值须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "demon",
+    "level_min": 41,
+    "level_max": 46,
+    "phase": "高级地图、经济与组队",
+    "focus": "41汲魂、43锁灵、45御魔适合持续控场与组队",
+    "new_skills": [
+      "汲魂咒",
+      "锁灵咒",
+      "御魔咒"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：祭灵杖→明心（祖玛档）→龙翼/明王（赤月档）；穿戴限制和数值须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  },
+  {
+    "class_id": "demon",
+    "level_min": 47,
+    "level_max": 60,
+    "phase": "高阶挑战与长期目标",
+    "focus": "47御冥、50妖能吞噬、51妖影幻形，打宝优先保持结晶和恢复能力",
+    "new_skills": [
+      "御冥咒",
+      "妖能吞噬",
+      "妖影幻形"
+    ],
+    "maps_default": [
+      "赤月峡谷",
+      "祖玛寺庙",
+      "高级副本/BOSS地点"
+    ],
+    "gear_goal": "武器阶梯（装备档次确认）：祭灵杖→明心（祖玛档）→龙翼/明王（赤月档）；穿戴限制和数值须读取服务端数据。",
+    "type": "strategy_inference",
+    "require_server_validation": true
+  }
+]

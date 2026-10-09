@@ -1,0 +1,191 @@
+[
+  {
+    "class_id": "warrior",
+    "input_weapon": "炼狱",
+    "input_count": 6,
+    "output_weapon": "井中月",
+    "essence_count": 10,
+    "tier": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "warrior",
+    "input_weapon": "井中月",
+    "input_count": 6,
+    "output_weapon": "裁决之杖",
+    "essence_count": 75,
+    "tier": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "warrior",
+    "input_weapon": "井中月",
+    "input_count": 6,
+    "output_weapon": "怒斩",
+    "essence_count": 100,
+    "tier": "赤月档替代",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "mage",
+    "input_weapon": "魔杖",
+    "input_count": 6,
+    "output_weapon": "血饮",
+    "essence_count": 10,
+    "tier": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "mage",
+    "input_weapon": "血饮",
+    "input_count": 6,
+    "output_weapon": "骨玉权杖",
+    "essence_count": 100,
+    "tier": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "mage",
+    "input_weapon": "血饮",
+    "input_count": 6,
+    "output_weapon": "龙牙",
+    "essence_count": 125,
+    "tier": "赤月档替代",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "taoist",
+    "input_weapon": "银蛇",
+    "input_count": 6,
+    "output_weapon": "无极棍",
+    "essence_count": 10,
+    "tier": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "taoist",
+    "input_weapon": "无极棍",
+    "input_count": 6,
+    "output_weapon": "龙纹剑",
+    "essence_count": 100,
+    "tier": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "taoist",
+    "input_weapon": "无极棍",
+    "input_count": 6,
+    "output_weapon": "逍遥扇",
+    "essence_count": 125,
+    "tier": "赤月档替代",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "assassin",
+    "input_weapon": "追魂",
+    "input_count": 6,
+    "output_weapon": "赤影",
+    "essence_count": 10,
+    "tier": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "assassin",
+    "input_weapon": "赤影",
+    "input_count": 6,
+    "output_weapon": "龙爪手",
+    "essence_count": 100,
+    "tier": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "assassin",
+    "input_weapon": "赤影",
+    "input_count": 6,
+    "output_weapon": "霜影",
+    "essence_count": 125,
+    "tier": "赤月档替代",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "archer",
+    "input_weapon": "双环战弓",
+    "input_count": 6,
+    "output_weapon": "沉锋",
+    "essence_count": 10,
+    "tier": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "archer",
+    "input_weapon": "沉锋",
+    "input_count": 6,
+    "output_weapon": "猎首",
+    "essence_count": 100,
+    "tier": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "archer",
+    "input_weapon": "沉锋",
+    "input_count": 6,
+    "output_weapon": "血染",
+    "essence_count": 125,
+    "tier": "赤月档替代",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "dragoon",
+    "input_weapon": "蛇牙枪",
+    "input_count": 6,
+    "output_weapon": "青虹",
+    "essence_count": 10,
+    "tier": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "dragoon",
+    "input_weapon": "青虹",
+    "input_count": 6,
+    "output_weapon": "虎咆",
+    "essence_count": 100,
+    "tier": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "dragoon",
+    "input_weapon": "青虹",
+    "input_count": 6,
+    "output_weapon": "横江",
+    "essence_count": 125,
+    "tier": "赤月档替代",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "demon",
+    "input_weapon": "祭灵杖",
+    "input_count": 6,
+    "output_weapon": "明心",
+    "essence_count": 10,
+    "tier": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "demon",
+    "input_weapon": "明心",
+    "input_count": 6,
+    "output_weapon": "龙翼",
+    "essence_count": 100,
+    "tier": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  },
+  {
+    "class_id": "demon",
+    "input_weapon": "明心",
+    "input_count": 6,
+    "output_weapon": "明王",
+    "essence_count": 125,
+    "tier": "赤月档替代",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641"
+  }
+]

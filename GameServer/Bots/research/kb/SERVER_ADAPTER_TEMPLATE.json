@@ -1,0 +1,37 @@
+{
+  "server_id": "FILL_FROM_YOUR_REAL_SERVER",
+  "version_note": "请注明客户端及私服版本、开放节点；配置覆盖官方攻略",
+  "enabled_classes": [
+    "warrior",
+    "mage",
+    "taoist",
+    "assassin",
+    "archer",
+    "dragoon",
+    "demon"
+  ],
+  "enabled_systems": {
+    "engraving": null,
+    "weapon_fusion": null,
+    "awakening": null,
+    "special_equipment": null,
+    "market": null,
+    "pvp": null
+  },
+  "skill_overrides": [],
+  "item_overrides": [],
+  "map_overrides": [],
+  "monster_overrides": [],
+  "npc_overrides": [],
+  "loot_overrides": [],
+  "exp_table": [],
+  "market_price_snapshots": [],
+  "server_time_rules": {
+    "boss_respawn_source": null,
+    "daily_reset_timezone": null
+  },
+  "validation_notes": [
+    "不要把 null 当作 false",
+    "每个表按真实 ID 映射名称，保留原始 itemId/skillId/mapId"
+  ]
+}

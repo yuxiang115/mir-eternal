@@ -1,0 +1,906 @@
+[
+  {
+    "level": 7,
+    "name": "基本剑术",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 19,
+    "name": "攻杀剑术",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 25,
+    "name": "刺杀剑术",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 28,
+    "name": "半月弯刀",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 30,
+    "name": "野蛮冲撞",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 35,
+    "name": "烈火剑法",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 38,
+    "name": "狮子吼",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 39,
+    "name": "爆炎剑诀",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 40,
+    "name": "金钟罩",
+    "awakening": true,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 45,
+    "name": "雷霆剑法",
+    "awakening": true,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 47,
+    "name": "逐日剑法",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 50,
+    "name": "天威剑法",
+    "awakening": true,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 51,
+    "name": "神威盾甲",
+    "awakening": false,
+    "class_id": "warrior",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/index.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 7,
+    "name": "火球术",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 12,
+    "name": "抗拒火环",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 13,
+    "name": "诱惑之光",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 16,
+    "name": "地狱火",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 17,
+    "name": "雷电术",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 19,
+    "name": "大火球",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 19,
+    "name": "瞬息移动",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 22,
+    "name": "爆裂火焰",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 24,
+    "name": "火墙",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 26,
+    "name": "疾光电影",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 30,
+    "name": "地狱雷光",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 31,
+    "name": "魔法盾",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 32,
+    "name": "圣言术",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 35,
+    "name": "冰咆哮",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 36,
+    "name": "寒冰掌",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 38,
+    "name": "灭天火",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 40,
+    "name": "法神奥义",
+    "awakening": true,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 45,
+    "name": "元素星辰",
+    "awakening": true,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 47,
+    "name": "流星火雨",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 50,
+    "name": "魔能星陨",
+    "awakening": true,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 51,
+    "name": "魔能闪",
+    "awakening": false,
+    "class_id": "mage",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/fs.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 7,
+    "name": "治愈术",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 9,
+    "name": "精神力战法",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 14,
+    "name": "施毒术",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 18,
+    "name": "灵魂火符",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 19,
+    "name": "召唤骷髅",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 20,
+    "name": "隐身术",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 21,
+    "name": "集体隐身术",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 22,
+    "name": "幽灵盾",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 25,
+    "name": "神圣战甲术",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 28,
+    "name": "困魔咒",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 29,
+    "name": "气功波",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 33,
+    "name": "群体治愈术",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 35,
+    "name": "召唤神兽",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 36,
+    "name": "无极真气",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 40,
+    "name": "召唤月灵",
+    "awakening": true,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 45,
+    "name": "阴阳道盾",
+    "awakening": true,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 47,
+    "name": "噬血术",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 50,
+    "name": "四象之力",
+    "awakening": true,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 51,
+    "name": "道尊天谕",
+    "awakening": false,
+    "class_id": "taoist",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ds.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 7,
+    "name": "暴击术",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 9,
+    "name": "精准术",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 18,
+    "name": "霹雳弹",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 22,
+    "name": "潜行术",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 23,
+    "name": "致残毒药",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 28,
+    "name": "鬼灵步",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 30,
+    "name": "炎龙波",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 32,
+    "name": "旋风腿",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 35,
+    "name": "冷酷",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 40,
+    "name": "暗影守卫",
+    "awakening": true,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 41,
+    "name": "追魂镖",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 45,
+    "name": "魔刃天旋",
+    "awakening": true,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 47,
+    "name": "火镰狂舞",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 50,
+    "name": "猎命宣告",
+    "awakening": true,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 51,
+    "name": "献祭",
+    "awakening": false,
+    "class_id": "assassin",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ck.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 7,
+    "name": "基础射击",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 10,
+    "name": "精准打击",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 16,
+    "name": "二连射",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 21,
+    "name": "战术标记",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 25,
+    "name": "三发散射",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 30,
+    "name": "击飞射击",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 35,
+    "name": "强袭",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 37,
+    "name": "连环暗雷",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 40,
+    "name": "羿神庇佑",
+    "awakening": true,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 41,
+    "name": "穿刺射击",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 45,
+    "name": "万箭穿心",
+    "awakening": true,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 47,
+    "name": "凝神",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 50,
+    "name": "夜幕隐踪",
+    "awakening": true,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 51,
+    "name": "守护箭羽",
+    "awakening": false,
+    "class_id": "archer",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/archer.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 7,
+    "name": "中平枪术",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 12,
+    "name": "伏波荡寇",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 17,
+    "name": "横扫六合",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 24,
+    "name": "狂飙突刺",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 28,
+    "name": "钩镰枪法",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 30,
+    "name": "乾坤斗气",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 33,
+    "name": "神威镇域",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 35,
+    "name": "枪出如龙",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 37,
+    "name": "御龙晶甲",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 40,
+    "name": "盘龙枪势",
+    "awakening": true,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 41,
+    "name": "凌云枪法",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 45,
+    "name": "百战军魂",
+    "awakening": true,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 47,
+    "name": "燃血化元",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 50,
+    "name": "龙啸千里",
+    "awakening": true,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 51,
+    "name": "召唤龙驹",
+    "awakening": false,
+    "class_id": "dragoon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/lq.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 7,
+    "name": "妖术弹",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 12,
+    "name": "邪爪握",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 17,
+    "name": "灵魂冲击",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 20,
+    "name": "驭魂咒",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 26,
+    "name": "扰心咒",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 30,
+    "name": "妖能化晶",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 33,
+    "name": "魂冲咒",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 35,
+    "name": "灭魂",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 37,
+    "name": "离怨咒",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 40,
+    "name": "妖力灌体",
+    "awakening": true,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 41,
+    "name": "汲魂咒",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 43,
+    "name": "锁灵咒",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 45,
+    "name": "御魔咒",
+    "awakening": true,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 47,
+    "name": "御冥咒",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 50,
+    "name": "妖能吞噬",
+    "awakening": true,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  },
+  {
+    "level": 51,
+    "name": "妖影幻形",
+    "awakening": false,
+    "class_id": "demon",
+    "source": "https://actcq.web.sdo.com/project/2016/m/0119role/ys.html",
+    "unlock_note": "达到学习等级≠已学会；需检查技能书/服务器配置"
+  }
+]

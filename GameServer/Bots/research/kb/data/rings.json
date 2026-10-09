@@ -1,0 +1,252 @@
+[
+  {
+    "name": "古铜戒指",
+    "suggested_class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 3
+    },
+    "stat_focus": "attack",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "黑色水晶戒指",
+    "suggested_class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "stat_focus": "attack",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "珊瑚戒指",
+    "suggested_class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 25
+    },
+    "stat_focus": "attack",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "龙之戒指",
+    "suggested_class_id": "warrior",
+    "requirement": {
+      "type": "attack",
+      "value": 37
+    },
+    "stat_focus": "attack",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "力量戒指",
+    "suggested_class_id": "warrior",
+    "requirement": {
+      "type": "attack",
+      "value": 46
+    },
+    "stat_focus": "attack",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "战神戒指",
+    "suggested_class_id": "warrior",
+    "requirement": {
+      "type": "attack",
+      "value": 54
+    },
+    "stat_focus": "attack",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "六角戒指",
+    "suggested_class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 7
+    },
+    "stat_focus": "magic",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "蛇眼戒指",
+    "suggested_class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "stat_focus": "magic",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "魅力戒指",
+    "suggested_class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 23
+    },
+    "stat_focus": "magic",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "红宝石戒指",
+    "suggested_class_id": "mage",
+    "requirement": {
+      "type": "magic",
+      "value": 17
+    },
+    "stat_focus": "magic",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "紫碧螺",
+    "suggested_class_id": "mage",
+    "requirement": {
+      "type": "magic",
+      "value": 24
+    },
+    "stat_focus": "magic",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "圣魔戒指",
+    "suggested_class_id": "mage",
+    "requirement": {
+      "type": "magic",
+      "value": 32
+    },
+    "stat_focus": "magic",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "玻璃戒指",
+    "suggested_class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 7
+    },
+    "stat_focus": "taoism",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "珍珠戒指",
+    "suggested_class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "stat_focus": "taoism",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "道德戒指",
+    "suggested_class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 23
+    },
+    "stat_focus": "taoism",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "降妖除魔戒指",
+    "suggested_class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 25
+    },
+    "stat_focus": "balanced_magic_defense",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "铂金戒指",
+    "suggested_class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 25
+    },
+    "stat_focus": "taoism",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "泰坦戒指",
+    "suggested_class_id": "taoist",
+    "requirement": {
+      "type": "spirit",
+      "value": 24
+    },
+    "stat_focus": "taoism",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "真魂戒指",
+    "suggested_class_id": "taoist",
+    "requirement": {
+      "type": "taoism",
+      "value": 30
+    },
+    "stat_focus": "taoism",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "青铜戒指",
+    "suggested_class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 9
+    },
+    "stat_focus": "stab",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "翡翠戒指",
+    "suggested_class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 16
+    },
+    "stat_focus": "stab",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "紫玉戒指",
+    "suggested_class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "stat_focus": "stab",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "闪影戒指",
+    "suggested_class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 23
+    },
+    "stat_focus": "stab",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "芒星戒指",
+    "suggested_class_id": "assassin",
+    "requirement": {
+      "type": "stab",
+      "value": 33
+    },
+    "stat_focus": "stab",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  },
+  {
+    "name": "冥王戒指",
+    "suggested_class_id": "assassin",
+    "requirement": {
+      "type": "stab",
+      "value": 52
+    },
+    "stat_focus": "stab",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/jewelry2.html"
+  }
+]

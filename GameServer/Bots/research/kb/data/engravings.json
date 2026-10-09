@@ -1,0 +1,106 @@
+[
+  {
+    "class_id": "warrior",
+    "skill": "基本剑术",
+    "engraving": "压制印",
+    "purpose": "低成本清普通怪/击杀回血",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "warrior",
+    "skill": "半月弯刀",
+    "engraving": "疾月印",
+    "purpose": "范围练级和攻速",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "warrior",
+    "skill": "攻杀剑术",
+    "engraving": "煌龙印",
+    "purpose": "爆发",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "mage",
+    "skill": "地狱火",
+    "engraving": "炎龙印",
+    "purpose": "群伤",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "mage",
+    "skill": "雷电术",
+    "engraving": "天罚印",
+    "purpose": "连续单体伤害",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "mage",
+    "skill": "火墙",
+    "engraving": "真红印",
+    "purpose": "持续范围伤害",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "taoist",
+    "skill": "召唤骷髅",
+    "engraving": "偷天印",
+    "purpose": "召唤物强化",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "taoist",
+    "skill": "召唤神兽",
+    "engraving": "血兽印",
+    "purpose": "神兽强化",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "taoist",
+    "skill": "施毒术",
+    "engraving": "凌云印",
+    "purpose": "降毒药消耗和施毒效率",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=265879"
+  },
+  {
+    "class_id": "assassin",
+    "skill": "精准术",
+    "engraving": "闪击印",
+    "purpose": "普攻时追加范围伤害",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=344350"
+  },
+  {
+    "class_id": "archer",
+    "skill": "三发散射",
+    "engraving": "箭雨印",
+    "purpose": "范围清怪",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=344350"
+  },
+  {
+    "class_id": "dragoon",
+    "skill": "中平枪术",
+    "engraving": "守中印",
+    "purpose": "击杀续航",
+    "grade": "official_description_and_strategy",
+    "source": "https://cq.web.sdo.com/web4/content.aspx?id=344350"
+  },
+  {
+    "class_id": "demon",
+    "skill": "妖术弹",
+    "engraving": "魔染印",
+    "purpose": "攻击附近目标",
+    "grade": "official_description_and_strategy",
+    "source": "https://actcq.web.sdo.com/project/2015/mingwen/index.html"
+  }
+]

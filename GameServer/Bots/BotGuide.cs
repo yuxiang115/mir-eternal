@@ -8,19 +8,104 @@ using GameServer.Templates;
 namespace GameServer.Bots
 {
     /// <summary>
-    /// 服务器自动生成的"官方攻略"(等级段→推荐地图/怪/装备),给 bot 的 check_guide 工具用。
-    /// 数据全部来自 GameMap/MonsterSpawns/Monsters/GameItems,不是编的 —— bot 查到的是这个服的真实生态。
+    /// "官方攻略"双源合成:①知识库(research/kb,七职业×七成长段的装备/技能/地图路线,静态文件)
+    /// ②本服真实数据(刷怪表/物品表自动聚合)。服务器实测优先,KB 提供玩法建议。
     /// </summary>
     public static class BotGuide
     {
         private static Dictionary<int, string> _cache; // 等级段下限 → 攻略文本
         private static readonly int[] Bands = { 1, 11, 21, 31, 41 };
 
-        public static string ForLevel(int level)
+        public static string ForLevel(int level, GameObjectRace race = GameObjectRace.战士)
         {
             BuildCache();
             var band = Bands.Last(b => level >= b);
-            return _cache[band];
+            var text = _cache[band];
+            var kb = ForKb(level, race);
+            return kb != null ? kb + "\n" + text : text;
+        }
+
+        // ===================== 知识库(research/kb) =====================
+
+        private static List<KbStage> _kbStages;
+
+        private class KbStage
+        {
+            public string ClassId;
+            public int LevelMin;
+            public int LevelMax;
+            public string Phase;
+            public string Focus;
+            public string GearGoal;
+        }
+
+        private static string ForKb(int level, GameObjectRace race)
+        {
+            try
+            {
+                if (_kbStages == null)
+                    LoadKb();
+                if (_kbStages == null || _kbStages.Count == 0)
+                    return null;
+
+                var classId = RaceToKbClass(race);
+                var stage = _kbStages.FirstOrDefault(s => s.ClassId == classId && level >= s.LevelMin && level <= s.LevelMax);
+                if (stage == null)
+                    return null;
+
+                var sb = new StringBuilder();
+                sb.Append("【玩家攻略·").Append(stage.Phase).Append("】").Append(stage.Focus).Append('\n');
+                if (!string.IsNullOrEmpty(stage.GearGoal))
+                {
+                    var gear = stage.GearGoal;
+                    var cut = gear.IndexOf("。");
+                    sb.Append("装备路线: ").Append(cut > 0 ? gear.Substring(0, cut + 1) : gear).Append('\n');
+                }
+                sb.Append("(攻略仅供参考,以服务器实际为准)");
+                return sb.ToString();
+            }
+            catch
+            {
+                return null; // KB 缺失/损坏不影响自动攻略
+            }
+        }
+
+        private static void LoadKb()
+        {
+            _kbStages = new List<KbStage>();
+            var path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "kb", "data", "class_progression.json");
+            if (!System.IO.File.Exists(path))
+                path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "GameServer", "Bots", "research", "kb", "data", "class_progression.json");
+            if (!System.IO.File.Exists(path))
+                return;
+
+            var json = Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(path));
+            foreach (var item in json)
+            {
+                _kbStages.Add(new KbStage
+                {
+                    ClassId = (string)item["class_id"] ?? "",
+                    LevelMin = (int?)item["level_min"] ?? 0,
+                    LevelMax = (int?)item["level_max"] ?? 0,
+                    Phase = (string)item["phase"] ?? "",
+                    Focus = (string)item["focus"] ?? "",
+                    GearGoal = (string)item["gear_goal"] ?? "",
+                });
+            }
+        }
+
+        private static string RaceToKbClass(GameObjectRace race)
+        {
+            switch (race)
+            {
+                case GameObjectRace.战士: return "warrior";
+                case GameObjectRace.法师: return "mage";
+                case GameObjectRace.道士: return "taoist";
+                case GameObjectRace.刺客: return "assassin";
+                case GameObjectRace.弓手: return "archer";
+                case GameObjectRace.龙枪: return "dragoon";
+                default: return "warrior";
+            }
         }
 
         private static void BuildCache()

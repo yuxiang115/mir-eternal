@@ -1,0 +1,461 @@
+[
+  {
+    "name": "八荒",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 15
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "斩马刀",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "修罗",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 22
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "炼狱",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 26
+    },
+    "tier_label": "沃玛档合成原料",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "井中月",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 28
+    },
+    "tier_label": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "裁决",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 30
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "怒斩",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "attack",
+      "value": 46
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "屠龙",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 34
+    },
+    "tier_label": "神兵",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "开天",
+    "class_id": "warrior",
+    "requirement": {
+      "type": "level",
+      "value": 43
+    },
+    "tier_label": "更高阶",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "海魂",
+    "class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 15
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "偃月",
+    "class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "魔杖",
+    "class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 26
+    },
+    "tier_label": "沃玛档合成原料",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "血饮",
+    "class_id": "mage",
+    "requirement": {
+      "type": "magic",
+      "value": 27
+    },
+    "tier_label": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "骨玉权杖",
+    "class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 35
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "龙牙",
+    "class_id": "mage",
+    "requirement": {
+      "type": "magic",
+      "value": 28
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "嗜魂法杖",
+    "class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 35
+    },
+    "tier_label": "神兵",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "镇天",
+    "class_id": "mage",
+    "requirement": {
+      "type": "level",
+      "value": 43
+    },
+    "tier_label": "更高阶",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "半月",
+    "class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 15
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "降魔",
+    "class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "银蛇",
+    "class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 26
+    },
+    "tier_label": "沃玛档合成原料",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "无极棍",
+    "class_id": "taoist",
+    "requirement": {
+      "type": "spirit",
+      "value": 25
+    },
+    "tier_label": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "龙纹剑",
+    "class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 35
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "逍遥扇",
+    "class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 35
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "玄天",
+    "class_id": "taoist",
+    "requirement": {
+      "type": "level",
+      "value": 43
+    },
+    "tier_label": "更高阶",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "铁柴刀",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 1
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "双刀",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 13
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "冰月戟",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 20
+    },
+    "tier_label": "普通",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "追魂",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 26
+    },
+    "tier_label": "沃玛档合成原料",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "赤影",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 28
+    },
+    "tier_label": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "龙爪手",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "stab",
+      "value": 37
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "霜影",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "stab",
+      "value": 40
+    },
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "黯灭轮",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 35
+    },
+    "tier_label": "神兵",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "破天",
+    "class_id": "assassin",
+    "requirement": {
+      "type": "level",
+      "value": 43
+    },
+    "tier_label": "更高阶",
+    "source": "https://actcq.web.sdo.com/project/2015/CqIntro/gameEquipment/weapon.html",
+    "requirement_confidence": "verified_official"
+  },
+  {
+    "name": "双环战弓",
+    "class_id": "archer",
+    "requirement": null,
+    "tier_label": "沃玛档合成原料",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "沉锋",
+    "class_id": "archer",
+    "requirement": null,
+    "tier_label": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "猎首",
+    "class_id": "archer",
+    "requirement": null,
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "血染",
+    "class_id": "archer",
+    "requirement": null,
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "蛇牙枪",
+    "class_id": "dragoon",
+    "requirement": null,
+    "tier_label": "沃玛档合成原料",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "青虹",
+    "class_id": "dragoon",
+    "requirement": null,
+    "tier_label": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "虎咆",
+    "class_id": "dragoon",
+    "requirement": null,
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "横江",
+    "class_id": "dragoon",
+    "requirement": null,
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "祭灵杖",
+    "class_id": "demon",
+    "requirement": null,
+    "tier_label": "沃玛档合成原料",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "明心",
+    "class_id": "demon",
+    "requirement": null,
+    "tier_label": "祖玛档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "龙翼",
+    "class_id": "demon",
+    "requirement": null,
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  },
+  {
+    "name": "明王",
+    "class_id": "demon",
+    "requirement": null,
+    "tier_label": "赤月档",
+    "source": "https://actcq.web.sdo.com/project/2016/web/0428dataStation/content.aspx?aid=332965&cid=7641",
+    "requirement_confidence": "unknown_verify_server"
+  }
+]

@@ -1,0 +1,12 @@
+{"id": 1, "class_id": "warrior", "level": 26, "observation": "金币只够买药和修理", "preferred_action": "先去低难度蜈蚣洞测药耗，再攒炼狱。先确认服务器有该地图，不能用28级的半月。", "persona": "谨慎型", "status": "illustrative_not_actual_server_log"}
+{"id": 2, "class_id": "mage", "level": 26, "observation": "刚学火墙、没学魔法盾", "preferred_action": "用地形和宝宝控怪试烧怪；怪近身先撤，魔法盾31级才可能解锁。", "persona": "效率型", "status": "illustrative_not_actual_server_log"}
+{"id": 3, "class_id": "taoist", "level": 19, "observation": "刚获得召唤骷髅", "preferred_action": "先练骷髅并观察受伤，再决定是否去矿洞；尽量少烧毒药。", "persona": "省钱型", "status": "illustrative_not_actual_server_log"}
+{"id": 4, "class_id": "assassin", "level": 28, "observation": "背包有赤影，面前怪太多", "preferred_action": "先核对能否穿赤影；潜行绕开怪群，找落单目标而非硬打。", "persona": "独行型", "status": "illustrative_not_actual_server_log"}
+{"id": 5, "class_id": "archer", "level": 25, "observation": "刚有三发散射，被怪贴近", "preferred_action": "先撤到宽阔处，选小群怪练散射；检查箭矢余量。", "persona": "谨慎型", "status": "illustrative_not_actual_server_log"}
+{"id": 6, "class_id": "dragoon", "level": 30, "observation": "刚学乾坤斗气，队友残血", "preferred_action": "先切防御取向顶住，再用横扫清怪，不追求最高输出。", "persona": "团队型", "status": "illustrative_not_actual_server_log"}
+{"id": 7, "class_id": "demon", "level": 35, "observation": "妖能结晶只有一层", "preferred_action": "不要连续耗晶施法；先恢复资源，用战魂缓解正面压力。", "persona": "规划型", "status": "illustrative_not_actual_server_log"}
+{"id": 8, "class_id": "warrior", "level": 38, "observation": "公会喊去打祖玛教主", "preferred_action": "确认装备、药、等级和队伍人数；没有治疗/前排能力就提议补人。", "persona": "社交型", "status": "illustrative_not_actual_server_log"}
+{"id": 9, "class_id": "mage", "level": 35, "observation": "蓝药即将耗尽", "preferred_action": "比较怪物收益与补给成本，回城/换低耗路线；不因高伤法术继续硬刷。", "persona": "节俭型", "status": "illustrative_not_actual_server_log"}
+{"id": 10, "class_id": "taoist", "level": 35, "observation": "队友喊组队打白野猪", "preferred_action": "优先保证神兽与治愈，沟通战利品分配；不空口承诺必出装备。", "persona": "合作型", "status": "illustrative_not_actual_server_log"}
+{"id": 11, "class_id": "assassin", "level": 45, "observation": "死亡两次且装备耐久低", "preferred_action": "停止重复送死，修装备、换小怪或找队友，再考虑继续。", "persona": "克制型", "status": "illustrative_not_actual_server_log"}
+{"id": 12, "class_id": "demon", "level": 51, "observation": "有朋友找他组队", "preferred_action": "记住上次合作关系，调整今天计划；先确认副本权限和本服妖影幻形是否已学。", "persona": "社交型", "status": "illustrative_not_actual_server_log"}

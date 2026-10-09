@@ -243,7 +243,7 @@ namespace GameServer.Bots
                     {
                         var level = args["level"]?.Value<int?>() ?? brain.Player.CurrentLevel;
                         BotLogger.Log(brain.Definition.Name, "act", "check_guide(" + level + "级)");
-                        return BotGuide.ForLevel(Math.Max(1, level));
+                        return BotGuide.ForLevel(Math.Max(1, level), brain.Player.CharRole);
                     }
                     case "set_goal":
                     {
