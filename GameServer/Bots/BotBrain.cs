@@ -651,7 +651,7 @@ namespace GameServer.Bots
             if (TeamInviterName != null && MainProcess.CurrentTime < TeamInviteExpires)
                 sb.Append("[组队邀请] ").Append(TeamInviterName).Append(" 邀请你组队(想跟就 team_accept,不想就 team_reject,别晾着人)\n");
             if (s.Team != null)
-                sb.Append("[队伍] 和 ").Append(s.Team).Append(" 一队\n");
+                sb.Append("[队伍] 队友: ").Append(string.IsNullOrEmpty(s.Team) ? "(都掉线了,就剩你)" : s.Team).Append((char)10);
 
             // 长期目标常驻:做事围着它转
             if (Memory.Goals.Count > 0)
@@ -1152,7 +1152,8 @@ namespace GameServer.Bots
             var distance = player.GetDistance(target);
             if (distance > BotManager.Config.Reflex.ChaseMaxDistance)
             {
-                BotLogger.Log(Definition.Name, "event", "追击放弃(超" + distance + "格): " + target.ObjectName);
+                // 群殴环境下目标常被别人打死(TryGetValue 失败走 kill 分支),只有"追不上活的"才算真放弃
+                BotLogger.Log(Definition.Name, "event", "追不上放弃(距离" + distance + "格): " + target.ObjectName);
                 CombatTargetId = 0;
                 return false;
             }
@@ -1328,6 +1329,7 @@ namespace GameServer.Bots
         private LinkedList<Point> _pathSteps;
         /// <summary>本轮目的地的路径是否已重算过一次(重算后仍卡才放弃)。</summary>
         private bool _pathRetried;
+        private DateTime _lastRepathLog;
 
         /// <summary>设定"走到某扇门然后过图"的路线(打断当前意图)。</summary>
         public void SetGateRoute(TeleportGates gate)
@@ -1429,7 +1431,11 @@ namespace GameServer.Bots
                 {
                     _pathRetried = true;
                     RebuildPath(MoveTarget.Value); // 路径可能被占/过时,重算一条再试
-                    BotLogger.Log(Definition.Name, "event", "寻路重算(原路被堵/无进展)");
+                    if (MainProcess.CurrentTime > _lastRepathLog)
+                    {
+                        _lastRepathLog = MainProcess.CurrentTime.AddSeconds(10.0);
+                        BotLogger.Log(Definition.Name, "event", "寻路重算(10秒内多条合并)");
+                    }
                     return;
                 }
                 _pathRetried = false;
