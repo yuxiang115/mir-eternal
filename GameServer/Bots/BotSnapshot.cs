@@ -49,6 +49,8 @@ namespace GameServer.Bots
         /// <summary>当前地图的出口(传送门):名字+方向+目的地 —— 想换地图练级就得知道能去哪。</summary>
         public List<string> Exits = new List<string>();
         public List<SeenChat> Chat = new List<SeenChat>();
+        /// <summary>地面掉落(周围2格,名字+数量) —— 打死的怪掉了什么要看得见,不然永远不捡。</summary>
+        public List<GroundItem> GroundItems = new List<GroundItem>();
 
         /// <summary>这一轮新发生的事(视野/血量/等级/状态变化),没有就是空。</summary>
         public List<string> Events = new List<string>();
@@ -59,6 +61,13 @@ namespace GameServer.Bots
         /// <summary>背包/装备详情,只在发生变化或明确需要时携带(null=未变)。</summary>
         public List<ItemDesc> Inventory;
         public List<EquipDesc> Equipment;
+
+        public class GroundItem
+        {
+            public string Name;
+            public int Count;
+            public int Distance;
+        }
 
         public class SeenObject
         {
@@ -156,6 +165,31 @@ namespace GameServer.Bots
                 });
             }
             snapshot.Monsters = snapshot.Monsters.OrderBy(m => m.Distance).Take(5).ToList();
+
+            // ---- 地面掉落(周围2格,先看见才谈得上捡) ----
+            for (var dx = -2; dx <= 2; dx++)
+            {
+                for (var dy = -2; dy <= 2; dy++)
+                {
+                    var cell = player.CurrentMap[new Point(player.CurrentPosition.X + dx, player.CurrentPosition.Y + dy)];
+                    if (cell == null) continue;
+                    foreach (var obj in cell)
+                    {
+                        var ground = obj as ItemObject;
+                        if (ground == null || ground.物品模板 == null) continue;
+                        var g = new GroundItem
+                        {
+                            Name = ground.物品模板.Name,
+                            Count = Math.Max(1, ground.堆叠数量),
+                            Distance = Math.Max(Math.Abs(dx), Math.Abs(dy)),
+                        };
+                        var same = snapshot.GroundItems.FirstOrDefault(i => i.Name == g.Name && i.Distance == g.Distance);
+                        if (same != null) same.Count += g.Count;
+                        else snapshot.GroundItems.Add(g);
+                    }
+                }
+            }
+            snapshot.GroundItems = snapshot.GroundItems.OrderBy(g => g.Distance).Take(8).ToList();
 
             // ---- 本图刷怪点(离得最近的几个,让 bot 知道怪刷在哪) ----
             foreach (var spawn in MonsterSpawns.DataSheet)

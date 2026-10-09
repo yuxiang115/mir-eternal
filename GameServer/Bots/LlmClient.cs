@@ -9,11 +9,15 @@ using Newtonsoft.Json.Linq;
 
 namespace GameServer.Bots
 {
-    /// <summary>OpenAI 兼容协议的一条消息。</summary>
+    /// <summary>OpenAI 兼容协议的一条消息。assistant 可携带 tool_calls;role=tool 用 ToolCallId 配对回执。</summary>
     public class LlmMessage
     {
         public string Role;
         public string Content;
+        /// <summary>assistant 消息携带的原始 tool_calls 数组(官方协议要求原样回传)。</summary>
+        public JArray ToolCalls;
+        /// <summary>role=tool 时对应的 tool_call_id。</summary>
+        public string ToolCallId;
 
         public LlmMessage(string role, string content)
         {
@@ -40,6 +44,8 @@ namespace GameServer.Bots
         /// <summary>前缀缓存命中/未命中的输入 token(DeepSeek usage.prompt_cache_hit_tokens);非 0 即支持缓存。</summary>
         public int CacheHitTokens;
         public int CacheMissTokens;
+        /// <summary>模型原始 tool_calls 数组(官方协议要求下一轮原样回传)。</summary>
+        public JArray RawToolCalls;
     }
 
     /// <summary>
@@ -67,10 +73,18 @@ namespace GameServer.Bots
                 ["model"] = config.Model,
                 ["temperature"] = config.Temperature,
                 ["max_tokens"] = config.MaxTokens,
-                ["messages"] = new JArray(messages.Select(m => new JObject
+                ["messages"] = new JArray(messages.Select(m =>
                 {
-                    ["role"] = m.Role,
-                    ["content"] = m.Content ?? "",
+                    var o = new JObject
+                    {
+                        ["role"] = m.Role,
+                        ["content"] = m.Content ?? "",
+                    };
+                    if (m.ToolCalls != null && m.ToolCalls.Count > 0)
+                        o["tool_calls"] = m.ToolCalls; // assistant 原样回传(官方协议)
+                    if (!string.IsNullOrEmpty(m.ToolCallId))
+                        o["tool_call_id"] = m.ToolCallId; // tool 角色配对回执
+                    return o;
                 })),
             };
             if (tools != null && tools.Count > 0)
@@ -120,6 +134,8 @@ namespace GameServer.Bots
             result.Reasoning = message["reasoning_content"]?.Type == JTokenType.String ? message["reasoning_content"].ToString() : "";
 
             var toolCalls = message["tool_calls"] as JArray;
+            if (toolCalls != null && toolCalls.Count > 0)
+                result.RawToolCalls = (JArray)toolCalls.DeepClone();
             if (toolCalls != null)
             {
                 foreach (var token in toolCalls)

@@ -40,6 +40,10 @@ namespace GameServer.Bots
         public bool WasFollowing;
         public string LastInventoryFingerprint = "";
         public readonly List<string> ToolResults = new List<string>();
+        /// <summary>上轮模型原始 tool_calls(协议要求本轮请求原样回传+逐个配 tool 消息)。</summary>
+        public Newtonsoft.Json.Linq.JArray PendingToolCalls;
+        /// <summary>工具执行结果按调用 id 回执。</summary>
+        public readonly List<KeyValuePair<string, string>> ToolReplies = new List<KeyValuePair<string, string>>();
         /// <summary>最近一轮是否有新事件(供调度决定思考频率)。</summary>
         private bool _recentActivity;
 
@@ -380,10 +384,12 @@ namespace GameServer.Bots
         private async Task ThinkAsync(BotSnapshot snapshot)
         {
             var calls = new List<LlmToolCall>();
+            Newtonsoft.Json.Linq.JArray brain_pending = null;
             try
             {
                 var config = BotManager.Config;
                 var llm = config.Llm;
+                FlushPendingToolCalls();
                 var observation = BuildObservation(snapshot);
 
                 // 被搭话触发的思考:回复不受 say 节流限制
@@ -462,7 +468,14 @@ namespace GameServer.Bots
                         return; // 走 finally 安排下一次
                     }
 
-                    _conversation.Add(new LlmMessage("assistant", (result.Content ?? "") + "\n[动作] " + actionSummary));
+                    if (result.ToolCalls.Count > 0)
+                    {
+                        brain_pending = result.RawToolCalls ?? new Newtonsoft.Json.Linq.JArray();
+                    }
+                    else
+                    {
+                        _conversation.Add(new LlmMessage("assistant", (result.Content ?? "") + "\n[动作] (无动作)"));
+                    }
                     calls = result.ToolCalls;
                 }
                 catch (Exception ex)
@@ -492,6 +505,8 @@ namespace GameServer.Bots
                             {
                                 lock (brain.ToolResults)
                                     brain.ToolResults.Add(call.Name + ": " + reply);
+                                lock (brain.ToolReplies)
+                                    brain.ToolReplies.Add(new KeyValuePair<string, string>(call.Id, reply));
                                 if (reply.StartsWith("工具执行失败") || reply.StartsWith("未知工具"))
                                     MainProcess.AddSystemLog("[Bot] " + brain.Definition.Name + " " + reply);
                             }
@@ -502,6 +517,8 @@ namespace GameServer.Bots
             finally
             {
                 _thinking = false;
+                if (brain_pending != null)
+                    PendingToolCalls = brain_pending;
                 // 有新鲜事(聊天/事件)时反应快一点,平常按配置节奏,加随机抖动避免机械规律
                 var interval = BotManager.Config.ThinkIntervalMs;
                 if (!_recentActivity)
@@ -557,6 +574,14 @@ namespace GameServer.Bots
                 foreach (var m in s.Monsters)
                     sb.Append(m.Name).Append('(').Append(m.Level).Append("级,").Append(m.Direction).Append(m.Distance).Append("格) ");
                 sb.Append('\n');
+            }
+
+            if (s.GroundItems.Count > 0)
+            {
+                sb.Append("[地上掉落] ");
+                foreach (var g in s.GroundItems)
+                    sb.Append(g.Name).Append(g.Count > 1 ? "x" + g.Count : "").Append("(").Append(g.Distance).Append("格) ");
+                sb.Append((char)10);
             }
 
             if (s.SpawnSpots.Count > 0)
@@ -655,6 +680,31 @@ namespace GameServer.Bots
             if (string.IsNullOrEmpty(text) || text.Length <= max)
                 return text;
             return text.Substring(0, max) + "…";
+        }
+
+        /// <summary>把上一轮的 tool_calls 与执行结果组装成协议要求的 assistant+tool 消息对补进历史。</summary>
+        private void FlushPendingToolCalls()
+        {
+            if (PendingToolCalls == null)
+                return;
+            var calls = PendingToolCalls;
+            PendingToolCalls = null;
+
+            _conversation.Add(new LlmMessage("assistant", "") { ToolCalls = calls });
+            foreach (var token in calls)
+            {
+                var id = token["id"]?.ToString() ?? "";
+                var reply = "(未执行)";
+                lock (ToolReplies)
+                {
+                    var match = ToolReplies.FirstOrDefault(kv => kv.Key == id);
+                    if (match.Key == id && match.Value != null)
+                        reply = match.Value;
+                }
+                _conversation.Add(new LlmMessage("tool", reply) { ToolCallId = id });
+            }
+            lock (ToolReplies)
+                ToolReplies.Clear();
         }
 
         private void TrimHistory()
@@ -1396,8 +1446,8 @@ namespace GameServer.Bots
         /// <summary>战斗/挂机时自动捡脚下掉落(真人手速);捡到装备记入长期记忆。</summary>
         private void ReflexLoot(PlayerObject player)
         {
-            if (!AutoGrind && CombatTargetId == 0)
-                return;
+            if (FollowTargetId != 0 && CombatTargetId == 0)
+                return; // 跟人时别停下捡,先跟上;其余情况(挂机/战斗/闲逛)脚边有掉落就捡
 
             var cell = player.CurrentMap[player.CurrentPosition];
             if (cell == null) return;
