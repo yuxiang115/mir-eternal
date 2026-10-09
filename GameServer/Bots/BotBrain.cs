@@ -97,6 +97,7 @@ namespace GameServer.Bots
         private readonly List<LlmMessage> _conversation = new List<LlmMessage>();
         private DateTime _nextReflectionTime;
         private DateTime _lastMemoryFlush;
+        private DateTime _memoryRewriteAt;
 
         // ---- 反射层 ----
         private DateTime _lastReflexTime;
@@ -117,14 +118,15 @@ namespace GameServer.Bots
             //   [1] user   = 记忆(低频重写,只损失其后历史的缓存)
             //   [2..]      = 对话历史(append-only,永不改动 → 前缀稳定)
             _conversation.Add(new LlmMessage("system", BuildSystemPrompt()));
-            _conversation.Add(new LlmMessage("user", "[你的记忆]\n" + Memory.BuildPromptSection(RelevantNames())));
+            // 记忆一次性注入,之后永不动(重写=打碎后面所有 prefix cache)。
+            // 运行中记忆更新走 remember 工具(只落盘),下次启动/压缩时才重新注入。
+            _conversation.Add(new LlmMessage("user", "[你的记忆(上线时加载)]\n" + Memory.BuildPromptSection(null)));
         }
 
-        /// <summary>记忆有更新后重写记忆消息(index 1);system 与历史保持不动,前缀缓存尽量命中(主线程调用)。</summary>
+        /// <summary>已废弃:记忆层不再重写。记忆只在启动时注入一次;运行中 remember 落盘。</summary>
         public void RebuildSystemPrompt()
         {
-            if (_conversation.Count > 1)
-                _conversation[1] = new LlmMessage("user", "[你的记忆]\n" + Memory.BuildPromptSection(RelevantNames()));
+            // no-op: deliberate — rewriting messages[1] invalidates the entire prefix cache
         }
 
         /// <summary>最近 10 分钟在视野里出现过/聊过天的人,他们的记忆优先检索。</summary>
@@ -353,27 +355,23 @@ namespace GameServer.Bots
             var someoneNearby = snapshot.Players.Count > 0;
             if (!hasNews && !busy && !someoneNearby)
             {
-                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(20 + MainProcess.RandomNumber.Next(40));
+                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(180 + MainProcess.RandomNumber.Next(240));
                 return;
             }
 
             // 意图执行中(挂机/跟随/战斗/移动)且没有新鲜事:身体自己在干,不用脑子 ——
-            // 长周期巡检(1.5~3分钟),中途任何事件(聊天/掉血/承诺到点)都会立即唤醒
+            // 超长周期巡检(2~5分钟),中途任何事件(聊天/掉血/承诺到点)都会立即唤醒
             if (!hasNews && busy)
             {
-                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(90 + MainProcess.RandomNumber.Next(90));
+                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(120 + MainProcess.RandomNumber.Next(180));
                 return;
             }
 
-            // 身边有人但没新鲜事:低频保持社交直觉(25~55秒,60%直接跳过)
+            // 身边有人但没新鲜事:低频社交直觉(60~150秒,70%直接跳过)
             if (!hasNews && !busy)
             {
-                if (MainProcess.RandomNumber.Next(100) >= 40)
-                {
-                    _nextThinkTime = MainProcess.CurrentTime.AddSeconds(25 + MainProcess.RandomNumber.Next(30));
-                    return;
-                }
-                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(25 + MainProcess.RandomNumber.Next(30));
+                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(60 + MainProcess.RandomNumber.Next(90));
+                return;
             }
 
             _thinking = true;
@@ -522,7 +520,7 @@ namespace GameServer.Bots
                 // 有新鲜事(聊天/事件)时反应快一点,平常按配置节奏,加随机抖动避免机械规律
                 var interval = BotManager.Config.ThinkIntervalMs;
                 if (!_recentActivity)
-                    interval *= 4;
+                    interval *= 12; // 没新鲜事:1分钟+抖动(成本控制)
                 var jitter = interval * (0.7 + MainProcess.RandomNumber.NextDouble() * 0.6);
                 _nextThinkTime = MainProcess.CurrentTime.AddMilliseconds(jitter);
             }
@@ -665,7 +663,16 @@ namespace GameServer.Bots
             if (Memory.Goals.Count > 0)
                 sb.Append("[你的目标] ").Append(string.Join(";", Memory.Goals)).Append('\n');
 
-            sb.Append("[该干嘛?]");
+            // 成本护栏:观察超过800字符截断(LLM不需要全部细节,足够决策即可)
+            if (sb.Length > 800)
+            {
+                sb.Length = 780;
+                sb.Append("...(省略)" + (char)10 + "[该干嘛?]");
+            }
+            else
+            {
+                sb.Append("[该干嘛?]");
+            }
             return sb.ToString();
         }
 
@@ -771,12 +778,7 @@ namespace GameServer.Bots
             if (MemoryDirty)
             {
                 MemoryDirty = false;
-                RebuildSystemPrompt();
-                if (now > _lastMemoryFlush)
-                {
-                    _lastMemoryFlush = now.AddSeconds(30.0);
-                    Memory.Save(Definition.Name);
-                }
+                Memory.Save(Definition.Name); // 落盘便宜,随时写;不碰 messages(缓存安全)
             }
         }
 
@@ -828,7 +830,9 @@ namespace GameServer.Bots
                 }
 
                 _conversation.RemoveRange(2, keepFrom - 2);
-                _conversation.Insert(2, new LlmMessage("user", "[更早的经历,凭这个回忆]\n" + summary));
+                // 压缩时重新注入最新记忆 + 浓缩经历(一次写,不再动)
+                var memoryRecall = Memory.BuildPromptSection(null);
+                _conversation.Insert(2, new LlmMessage("user", "[你的记忆(压缩时刷新)]\n" + memoryRecall + "\n\n[更早的经历,凭这个回忆]\n" + summary));
 
                 // "要点"部分写进长期记忆,不随会话丢
                 var idx = summary.IndexOf("要点");

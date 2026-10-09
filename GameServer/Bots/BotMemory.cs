@@ -385,7 +385,10 @@ namespace GameServer.Bots
                 parts.Add("我悟出来的道理:\n" + string.Join("\n", reflections.Select(r => "- " + r.Text)));
             }
 
-            if (Episodes.Count > 0)
+            // "最近的经历"不再注入记忆层 —— 击杀/捡装备让它每几秒变一次,
+            // 打碎 prefix cache(全部对话 miss)。观察尾部已有当轮事件,足够决策。
+            // 只有超过 1 小时的老经历才值得进记忆(已经过了反思消化)
+            if (false && Episodes.Count > 0)
             {
                 // 综合分 = 重要度 + 时间新鲜度;带出相关的玩家名事件加权;同类重复去重
                 var now = DateTime.Now;

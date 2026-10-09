@@ -117,9 +117,9 @@ namespace GameServer.Bots
         /// <summary>厂商扩展请求参数,原样合并进请求体,如 DeepSeek 的 {"thinking":{"type":"enabled"},"reasoning_effort":"high"}</summary>
         public JObject ExtraBody;
         /// <summary>执行轮推理档位(打怪/闲聊等常规决策,快而省)。为空则用 ExtraBody 里的值。</summary>
-        public string ReasoningEffortFast = "medium";
+        public string ReasoningEffortFast = "low";
         /// <summary>计划轮推理档位(定目标/兑现承诺/重大事件/被问复杂问题,想深一点)。</summary>
-        public string ReasoningEffortPlan = "high";
+        public string ReasoningEffortPlan = "medium";
     }
 
     /// <summary>人物卡:让机器人像一个有来处、有性格、有自己目标的老玩家。</summary>
