@@ -91,11 +91,64 @@ namespace GameServer.Bots
                     brain.ScheduleThink();
                     brain.ProcessReflex();
                 }
+
+                WriteColonySnapshot();
             }
             catch (Exception ex)
             {
                 MainProcess.AddSystemLog("[Bot] Process 异常(已忽略): " + ex.Message);
             }
+        }
+
+        private static DateTime _nextColonySnapshot;
+
+        /// <summary>管理员观察台:每10分钟把全村人的状态写进 Log/Bots/_colony.md,像模拟人生的养成快照。</summary>
+        private static void WriteColonySnapshot()
+        {
+            if (MainProcess.CurrentTime < _nextColonySnapshot || Brains.Count == 0)
+                return;
+            _nextColonySnapshot = MainProcess.CurrentTime.AddMinutes(10.0);
+
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("# 边境村快照 " + DateTime.Now.ToString("MM-dd HH:mm"));
+                sb.AppendLine();
+                foreach (var brain in Brains)
+                {
+                    var p = brain.Player;
+                    if (p == null) continue;
+                    var doing = brain.AutoGrind ? "挂机练级"
+                        : brain.CombatTargetId != 0 ? "战斗中"
+                        : brain.FollowTargetId != 0 ? "跟人"
+                        : brain.MoveTarget != null ? "赶路(" + brain.MoveTarget.Value.X + "," + brain.MoveTarget.Value.Y + ")"
+                        : "闲逛";
+                    sb.AppendLine("## " + brain.Definition.Name + " | " + p.CharRole + " " + p.CurrentLevel + "级 | " + GetMapName(p.CurrentMap.MapId)
+                        + " (" + p.CurrentPosition.X + "," + p.CurrentPosition.Y + ") | " + doing);
+                    sb.AppendLine("- 金币 " + p.NumberGoldCoins + " | 主手 " + (p.Equipment.TryGetValue(0, out var w) ? w.Name : "空手"));
+                    if (brain.Memory.Goals.Count > 0)
+                        sb.AppendLine("- 目标: " + string.Join(";", brain.Memory.Goals));
+                    if (brain.Memory.Relationships.Count > 0)
+                        sb.AppendLine("- 关系: " + string.Join(",", brain.Memory.Relationships.Select(r => r.Key + "=" + r.Value.Relation + "(" + (r.Value.Affinity >= 0 ? "+" : "") + r.Value.Affinity + ")").Take(5)));
+                    if (brain.Memory.Commitments.Any(c => c.Status == "pending"))
+                        sb.AppendLine("- 待办: " + string.Join(";", brain.Memory.Commitments.Where(c => c.Status == "pending").Select(c => c.Description + "@" + c.DueAt.ToString("MM-dd HH:mm")).Take(3)));
+                    var lastEvents = brain.Memory.Episodes.TakeLast(3).Select(e => e.Text).ToList();
+                    if (lastEvents.Count > 0)
+                        sb.AppendLine("- 近事: " + string.Join(" / ", lastEvents));
+                    sb.AppendLine();
+                }
+                System.IO.File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log", "Bots", "_colony.md"), sb.ToString(), System.Text.Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                MainProcess.AddSystemLog("[Bot] 社区快照失败(忽略): " + ex.Message);
+            }
+        }
+
+        private static string GetMapName(int mapId)
+        {
+            Templates.GameMap map;
+            return Templates.GameMap.DataSheet.TryGetValue((byte)mapId, out map) && !string.IsNullOrEmpty(map.MapName) ? map.MapName : mapId.ToString();
         }
 
         public static void EnqueueAction(Action action)
@@ -173,6 +226,8 @@ namespace GameServer.Bots
             if (definition.GivePotions)
                 GivePotions(player);
 
+            GrantStartupKit(definition, player, brain);
+
             return definition.Name + " 已上线(等级 " + player.CurrentLevel + ",地图 " + map.MapId + ")";
         }
 
@@ -185,6 +240,8 @@ namespace GameServer.Bots
             try
             {
                 brain.Alive = false;
+                if (brain.Memory != null)
+                    brain.Memory.Save(name);
                 brain.Player.Disconnect();
                 brain.Player = null;
             }
@@ -238,6 +295,31 @@ namespace GameServer.Bots
                     brain.RecordChat(sender.ObjectName, text, true);
                     return;
                 }
+            }
+        }
+
+        /// <summary>玩家邀请机器人组队时由 申请创建队伍 挂钩调用:机器人没有弹窗,把邀请事件交给大脑决定。</summary>
+        public static void OnTeamInviteToBot(PlayerObject inviter, CharacterData targetCharacter)
+        {
+            if (!Enabled || inviter == null || targetCharacter == null)
+                return;
+
+            var brain = Brains.FirstOrDefault(b => b.Alive && b.Player != null && b.Player.CharacterData == targetCharacter);
+            if (brain != null)
+                brain.OnTeamInvite(inviter);
+        }
+
+        /// <summary>同队聊天互通:队伍频道有人说话,队友机器人能听到。</summary>
+        public static void OnTeamChat(PlayerObject sender, string text)
+        {
+            if (!Enabled || Brains.Count == 0 || sender == null || string.IsNullOrEmpty(text) || sender.Team == null)
+                return;
+
+            foreach (var brain in Brains)
+            {
+                if (!brain.Alive || brain.Player == null || brain.Player == sender || brain.Player.Team != sender.Team)
+                    continue;
+                brain.RecordChat(sender.ObjectName, text, false);
             }
         }
 
@@ -330,6 +412,76 @@ namespace GameServer.Bots
 
             var area = map.ResurrectionArea ?? map.传送区域 ?? map.地图区域.FirstOrDefault();
             return area != null ? area.RandomCoords : Point.Empty;
+        }
+
+        /// <summary>
+        /// 启动套装(每号一生一次):一笔启动资金 + 当前等级能穿的最好武器和衣服 ——
+        /// 35级战士不该拿新手木剑,倒爷不该兜里没钱还喊收银蛇。
+        /// </summary>
+        private static void GrantStartupKit(BotDefinition definition, PlayerObject player, BotBrain brain)
+        {
+            if (brain.Memory.StartupKitGranted)
+                return;
+
+            brain.Memory.StartupKitGranted = true;
+
+            // 合规清理:移掉不该在身上的装备(等级/职业/性别不符,或本钱还配不上的贵重货 —— 神器要自己攒)
+            foreach (var item in player.Backpack.Values.ToList())
+            {
+                var equip = item?.物品模板 as EquipmentItem;
+                if (equip == null)
+                    continue;
+                var inappropriate = equip.NeedLevel > player.CurrentLevel
+                    || equip.NeedGender != GameObjectGender.不限 && equip.NeedGender != player.CharGender
+                    || equip.NeedRace != GameObjectRace.通用 && equip.NeedRace != player.CharRole
+                    || equip.SalePrice > 30000;
+                if (inappropriate)
+                {
+                    player.Backpack.Remove(item.物品位置.V);
+                    item.Delete();
+                    MainProcess.AddSystemLog("[Bot] " + definition.Name + " 清退不合规装备: " + equip.Name);
+                }
+            }
+
+            if (definition.StartingGold > 0)
+            {
+                player.NumberGoldCoins += definition.StartingGold;
+                MainProcess.AddSystemLog("[Bot] " + definition.Name + " 领取启动资金 " + definition.StartingGold + " 金币");
+            }
+
+            if (definition.StartingGear)
+            {
+                foreach (var slot in new[] { ItemType.武器, ItemType.衣服 })
+                {
+                    // 主属性按职业排:战士系看攻击,法师看魔法,道士看道术;等级匹配±12级防神器;性别限制
+                    var race = player.CharRole;
+                    Func<EquipmentItem, int> mainStat =
+                        race == GameObjectRace.法师 ? (Func<EquipmentItem, int>)(e => e.MaxMC) :
+                        race == GameObjectRace.道士 ? (e => e.MaxSC) : (e => e.MaxDC);
+
+                    var candidates = GameItems.DataSheet.Values
+                        .OfType<EquipmentItem>()
+                        .Where(e => e.Type == slot
+                                    && e.NeedLevel <= player.CurrentLevel
+                                    && e.NeedLevel >= Math.Max(1, player.CurrentLevel - 12)
+                                    && (e.NeedRace == GameObjectRace.通用 || e.NeedRace == race)
+                                    && (e.NeedGender == GameObjectGender.不限 || e.NeedGender == player.CharGender)
+                                    && e.SalePrice <= 30000) // 神器不发,自己攒钱追求去
+                        .OrderBy(mainStat)
+                        .ToList();
+                    // 平民中位数档:不选最强(那是屠龙级的目标),也不选最破,像系统商店里的寻常货
+                    var best = candidates.Count > 0 ? candidates[candidates.Count / 2] : null;
+                    if (best == null)
+                        continue;
+
+                    byte position;
+                    if (!player.CharacterData.TryGetFreeSpaceAtInventory(out position))
+                        break;
+                    player.GainItem(best, position, 1);
+                    MainProcess.AddSystemLog("[Bot] " + definition.Name + " 获得初始" + slot + ": " + best.Name);
+                }
+            }
+            brain.MemoryDirty = true;
         }
 
         private static void GivePotions(PlayerObject player)

@@ -201,6 +201,14 @@ namespace GameServer
       GameDataGateway.加载数据();
       MainForm.AddSystemLog("Client data has been loaded successful");
 
+      // 默认自动启动:数据一加载完就直接开服,不依赖窗口事件(锁屏/无桌面时 Shown 不可靠)。
+      // 想手动控制就放一个 .noautostart 文件在运行目录。
+      if (!System.IO.File.Exists(".noautostart") && !MainProcess.Running && MainForm.Singleton != null)
+      {
+        MainForm.AddSystemLog("自动启动服务器(放 .noautostart 文件可改为手动)...");
+        MainForm.Singleton.启动服务器_Click(null, null);
+      }
+
     }
 
 
@@ -264,6 +272,14 @@ namespace GameServer
 
     public static void AddSystemLog(string 内容)
     {
+      try
+      {
+        Directory.CreateDirectory(".\\Log");
+        File.AppendAllText(".\\Log\\System.log", string.Format("[{0}]: {1}\r\n", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), 内容), Encoding.UTF8);
+      }
+      catch
+      {
+      }
       MainForm MainForm = MainForm.Singleton;
       if (MainForm == null)
       {
@@ -283,6 +299,21 @@ namespace GameServer
     {
       if (!Config.DebugPackets) return;
       if (packet.PacketInfo?.NoDebug ?? false) return;
+
+      try
+      {
+        var dbg = packet.取字节(forceNoEncrypt: true);
+        var head = new StringBuilder();
+        for (var i = 0; i < Math.Min(24, dbg.Length); i++) head.Append(dbg[i].ToString("X2"));
+        File.AppendAllText(".\\Log\\Packets.log", string.Format("[{0}] {1} Id={2} {3} Len={4} Head={5}\r\n",
+          DateTime.Now.ToString("HH:mm:ss.fff"),
+          incoming ? "C->S" : "S->C",
+          packet.PacketInfo.Id,
+          packet.PacketType.Name,
+          dbg.Length,
+          head), Encoding.UTF8);
+      }
+      catch { }
 
       MainForm MainForm = MainForm.Singleton;
       if (MainForm == null) return;
@@ -306,6 +337,14 @@ namespace GameServer
 
     public static void AddChatLog(string preffix, byte[] text)
     {
+      try // 聊天记录落盘,服务器无 UI 运行时也可回查
+      {
+        System.IO.File.AppendAllText(".\\Log\\Chat.log",
+          string.Format("[{0:H:mm:ss}]: {1}", DateTime.Now, preffix + Encoding.UTF8.GetString(text).Trim(new char[1])) + "\r\n",
+          Encoding.UTF8);
+      }
+      catch { }
+
       MainForm MainForm = MainForm.Singleton;
       if (MainForm == null)
       {
@@ -941,7 +980,8 @@ namespace GameServer
 
     private void 启动服务器_Click(object sender, EventArgs e)
     {
-      MainProcess.Start();
+      // 注意:MainProcess.Start() 必须放在所有静态表初始化之后(移到方法末尾)——
+      // 后台线程的 MapGatewayProcess.Start 依赖这些表,先起线程再初始化就是裸竞态
       Config.软件注册代码 = (Settings.Default.SoftwareRegistrationCode = this.S_软件注册代码.Text);
       Settings.Default.Save();
       MainForm.MapsDataTable = new DataTable("地图数据表");
@@ -984,6 +1024,7 @@ namespace GameServer
       control2.Enabled = false;
       control.Enabled = false;
       MainProcess.NextSaveDataTime = MainProcess.CurrentTime.AddSeconds(43200);
+      MainProcess.Start(); // 一切就绪后才放主循环线程跑起来
     }
 
 

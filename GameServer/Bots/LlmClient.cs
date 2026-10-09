@@ -34,7 +34,12 @@ namespace GameServer.Bots
     public class LlmResult
     {
         public string Content;
+        /// <summary>思维链(DeepSeek reasoning_content 等)。只写日志,绝不外发。</summary>
+        public string Reasoning;
         public List<LlmToolCall> ToolCalls = new List<LlmToolCall>();
+        /// <summary>前缀缓存命中/未命中的输入 token(DeepSeek usage.prompt_cache_hit_tokens);非 0 即支持缓存。</summary>
+        public int CacheHitTokens;
+        public int CacheMissTokens;
     }
 
     /// <summary>
@@ -54,8 +59,8 @@ namespace GameServer.Bots
                 && !config.ApiKey.StartsWith("在此填入");
         }
 
-        /// <summary>非流式对话补全。tools 为 OpenAI tools 格式的 JSON 数组,可为 null。</summary>
-        public static async Task<LlmResult> ChatAsync(BotLlmConfig config, List<LlmMessage> messages, JArray tools)
+        /// <summary>非流式对话补全。tools 为 OpenAI tools 格式的 JSON 数组,可为 null。reasoningEffort 非空时覆盖 ExtraBody 档位(思考分级:计划轮高、执行轮低)。</summary>
+        public static async Task<LlmResult> ChatAsync(BotLlmConfig config, List<LlmMessage> messages, JArray tools, string reasoningEffort = null)
         {
             var body = new JObject
             {
@@ -70,6 +75,10 @@ namespace GameServer.Bots
             };
             if (tools != null && tools.Count > 0)
                 body["tools"] = tools;
+            if (config.ExtraBody != null)
+                body.Merge(config.ExtraBody); // 厂商扩展参数(thinking/reasoning_effort 等)
+            if (!string.IsNullOrWhiteSpace(reasoningEffort))
+                body["reasoning_effort"] = reasoningEffort; // 思考分级覆盖,优先于 ExtraBody
 
             var request = new HttpRequestMessage(HttpMethod.Post, BuildUrl(config.BaseUrl, "/chat/completions"));
             request.Headers.Add("Authorization", "Bearer " + config.ApiKey);
@@ -82,7 +91,15 @@ namespace GameServer.Bots
                 if (!response.IsSuccessStatusCode)
                     throw new Exception($"LLM HTTP {(int)response.StatusCode}: {Truncate(json, 300)}");
 
-                return ParseResponse(JObject.Parse(json));
+                var parsed = JObject.Parse(json);
+                var result = ParseResponse(parsed);
+                var usage = parsed["usage"] as JObject;
+                if (usage != null)
+                {
+                    result.CacheHitTokens = usage["prompt_cache_hit_tokens"]?.Type == JTokenType.Integer ? usage["prompt_cache_hit_tokens"].Value<int>() : 0;
+                    result.CacheMissTokens = usage["prompt_cache_miss_tokens"]?.Type == JTokenType.Integer ? usage["prompt_cache_miss_tokens"].Value<int>() : 0;
+                }
+                return result;
             }
         }
 
@@ -100,6 +117,7 @@ namespace GameServer.Bots
 
             var message = choice["message"];
             result.Content = message["content"]?.Type == JTokenType.String ? message["content"].ToString() : "";
+            result.Reasoning = message["reasoning_content"]?.Type == JTokenType.String ? message["reasoning_content"].ToString() : "";
 
             var toolCalls = message["tool_calls"] as JArray;
             if (toolCalls != null)

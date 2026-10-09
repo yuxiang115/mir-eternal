@@ -12,7 +12,7 @@ using System.Text;
 namespace GameServer.Networking
 {
 
-    public class SConnection
+    public partial class SConnection
     {
         private DateTime DisconnectTime;
         private bool Sending;

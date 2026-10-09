@@ -14307,6 +14307,7 @@ namespace GameServer.Maps
                                     字节描述 = memoryStream.ToArray()
                                 });
                                 MainProcess.AddChatLog("[Team][" + this.ObjectName + "]: ", array);
+                                GameServer.Bots.BotManager.OnTeamChat(this, Encoding.UTF8.GetString(array).TrimEnd('\0'));
                                 return;
                             }
                         }
@@ -15446,6 +15447,8 @@ namespace GameServer.Maps
                                     对象职业 = (byte)this.CharRole,
                                     对象名字 = this.ObjectName
                                 });
+                                // 目标是机器人:没有客户端弹窗,直接把邀请事件投递给它的大脑
+                                GameServer.Bots.BotManager.OnTeamInviteToBot(this, CharacterData);
                                 return;
                             }
                             SConnection 网络连接6 = this.ActiveConnection;

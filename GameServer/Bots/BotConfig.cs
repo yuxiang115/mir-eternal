@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GameServer.Bots
 {
@@ -13,8 +14,15 @@ namespace GameServer.Bots
         public bool Enabled = false;
         public BotLlmConfig Llm = new BotLlmConfig();
         public int ThinkIntervalMs = 5000;
-        public int MaxHistoryTurns = 16;
+        /// <summary>硬截断兜底轮数;正常运行永远到不了(72k 结构化压缩先触发),只为极端情况兜底。</summary>
+        public int MaxHistoryTurns = 80;
         public int MaxChatMemory = 30;
+        /// <summary>短期记忆(session)总预算,token 数;对话历史接近阈值时自动结构化压缩。</summary>
+        public int MaxContextTokens = 200000;
+        /// <summary>触发压缩的阈值(占 MaxContextTokens 的比例乘算)。</summary>
+        public int CompressThresholdTokens = 120000;
+        /// <summary>反思间隔(分钟):空闲且新经历攒够了,后台提炼一次长期洞察。</summary>
+        public int ReflectionIntervalMinutes = 20;
         public BotReflexConfig Reflex = new BotReflexConfig();
 
         [JsonProperty("Bots")]
@@ -64,14 +72,33 @@ namespace GameServer.Bots
                     {
                         Name = "陪玩小蜜",
                         Race = 0,
-                        Gender = 1,
-                        Hair = 0,
-                        HairColor = 0,
-                        Face = 0,
+                        Gender = 2,
                         Level = 35,
                         MapId = 142,
                         AutoStart = true,
-                        Persona = "你是传奇大陆的一名热心陪玩,性格活泼、爱聊天,会主动陪同玩家打怪升级。用简短口语化的中文说话,每次不超过两句话。",
+                        PersonaCard = new BotPersonaCard
+                        {
+                            性格 = "自来熟的热心肠大姐,爱管闲事,护短,看到萌新被欺负忍不住上,有点碎嘴但不讨人厌",
+                            背景 = "从比奇省来的老玩家,年轻时打过沙巴克,现在半退隐,靠带带新人赚点药钱,顺便享受游戏",
+                            说话风格 = "东北口音,爱说'老铁''整挺好''贼拉',语气热络,喜欢用~和哈哈,打字随意偶尔有错字",
+                            目标 = new[] { "练到40级", "攒钱换把好武器", "多带几个萌新朋友" },
+                        },
+                    },
+                    new BotDefinition
+                    {
+                        Name = "沉默刀客",
+                        Race = 0,
+                        Gender = 1,
+                        Level = 38,
+                        MapId = 142,
+                        AutoStart = false,
+                        PersonaCard = new BotPersonaCard
+                        {
+                            性格 = "独狼,话极少,但出手利索讲义气,答应的事一定办到",
+                            背景 = "没人知道他从哪来,只知道他在玛法大陆漂了很多年,靠一把刀吃饭",
+                            说话风格 = "惜字如金,一次最多一句话,常用'嗯''行''我来',绝不废话",
+                            目标 = new[] { "把等级练上去", "找一身好装备" },
+                        },
                     },
                 },
             };
@@ -87,6 +114,27 @@ namespace GameServer.Bots
         public double Temperature = 0.8;
         public int TimeoutSeconds = 30;
         public int MaxTokens = 1024;
+        /// <summary>厂商扩展请求参数,原样合并进请求体,如 DeepSeek 的 {"thinking":{"type":"enabled"},"reasoning_effort":"high"}</summary>
+        public JObject ExtraBody;
+        /// <summary>执行轮推理档位(打怪/闲聊等常规决策,快而省)。为空则用 ExtraBody 里的值。</summary>
+        public string ReasoningEffortFast = "medium";
+        /// <summary>计划轮推理档位(定目标/兑现承诺/重大事件/被问复杂问题,想深一点)。</summary>
+        public string ReasoningEffortPlan = "high";
+    }
+
+    /// <summary>人物卡:让机器人像一个有来处、有性格、有自己目标的老玩家。</summary>
+    public class BotPersonaCard
+    {
+        /// <summary>性格,如"自来熟的热心肠,爱管闲事,护短,战斗狂,有点抠门"。</summary>
+        public string 性格 = "";
+        /// <summary>背景故事,如"比奇老玩家,打过沙巴克攻城,半退隐后靠带萌新赚点药钱"。</summary>
+        public string 背景 = "";
+        /// <summary>说话风格,如"东北口音,爱说'老铁''整挺好',语气词多,偶尔打错字"。</summary>
+        public string 说话风格 = "";
+        /// <summary>作息习惯(配合游戏时段让行为有昼夜节律),如"白天练级,傍晚在村口找人唠嗑,深夜下线前收摊"。</summary>
+        public string 作息 = "";
+        /// <summary>自己在游戏里的目标(是"他/她"的目标,不是服务目标),如练级、攒钱买装备、带新人。</summary>
+        public string[] 目标 = new string[0];
     }
 
     public class BotReflexConfig
@@ -122,8 +170,14 @@ namespace GameServer.Bots
         public int Level = 1;
         public int MapId = 142;
         public bool AutoStart = true;
-        /// <summary>LLM 人设系统提示词</summary>
-        public string Persona = "你是一名传奇游戏陪玩。";
+        /// <summary>首次上线发放的启动资金(金币);老角色没领过也会补发一次。</summary>
+        public int StartingGold = 50000;
+        /// <summary>首次上线自动配发当前等级可穿的最好武器和衣服(解决"35级拿木剑"的世界违和)。</summary>
+        public bool StartingGear = true;
+        /// <summary>旧版单段人设(兼容保留);推荐用下面的 PersonaCard 人物卡。</summary>
+        public string Persona = "";
+        /// <summary>人物卡:性格/背景/说话风格/目标,塑造一个"活人玩家"。</summary>
+        public BotPersonaCard PersonaCard = new BotPersonaCard();
         /// <summary>出生/上线时是否自动补充药水</summary>
         public bool GivePotions = true;
 

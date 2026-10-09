@@ -35,7 +35,7 @@ namespace GameServer
                 }
                 Config.Language = Settings.Default.Language;
                 Config.SendPacketsAsync = Settings.Default.SendPacketsAsync;
-                Config.DebugPackets = Settings.Default.DebugPackets;
+                Config.DebugPackets = true; // e2e调试期强制开启包日志(原: Settings.Default.DebugPackets)
                 GamePacket.Config(typeof(SConnection));
 
                 Application.Run(new MainForm());
