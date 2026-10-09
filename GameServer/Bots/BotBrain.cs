@@ -409,9 +409,25 @@ namespace GameServer.Bots
                         var replyInstruction = lastWhisper != null
                             ? "[系统] " + lastWhisper.From + " 刚才私聊你,在等你的回话。必须调用 whisper 工具私聊回他(参数 player=" + lastWhisper.From + ",text=你那句话,用你的说话风格)。思考里写的字玩家听不见。"
                             : "[系统] 玩家刚才在对你说话,现在在等你的回话。必须调用 say 工具回他一句,一句话就好,用你自己的说话风格。思考里写的字玩家听不见。";
-                        _conversation.Add(new LlmMessage("assistant", (result.Content ?? "") + "\n[动作] (无动作)"));
-                        _conversation.Add(new LlmMessage("user", replyInstruction));
+                        _conversation.Add(new LlmMessage("user", replyInstruction + " 注意:必须发起真正的 say/whisper 函数调用,禁止只在文本里写[动作]。"));
                         result = await LlmClient.ChatAsync(llm, _conversation, BotToolCatalog.Definitions, llm.ReasoningEffortPlan);
+
+                        // 终极兜底:重试后模型还是把话写进文本而不是发起调用 —— 服务器直接从文本里抠出那句替它发,
+                        // 否则玩家等不到回复,而 bot 以为自己说过了(用户实测出现的"假说话"丢话问题)
+                        if (result.ToolCalls.All(c => c.Name != "say" && c.Name != "whisper"))
+                        {
+                            var salvaged = SalvageFakeSay(result.Content);
+                            if (salvaged != null)
+                            {
+                                var lastWhisper2 = snapshot.Chat.LastOrDefault(c => c.Whisper);
+                                if (lastWhisper2 != null)
+                                    result.ToolCalls.Add(new LlmToolCall { Name = "whisper", Arguments = new JObject { ["player"] = lastWhisper2.From, ["text"] = salvaged } });
+                                else
+                                    result.ToolCalls.Add(new LlmToolCall { Name = "say", Arguments = new JObject { ["text"] = salvaged } });
+                                MainProcess.AddSystemLog("[Bot兜底] " + Definition.Name + " 假说话被服务器代发: " + salvaged);
+                                BotLogger.Log(Definition.Name, "event", "假说话代发: " + salvaged);
+                            }
+                        }
                     }
 
                     // 思维链与文本回复只进服务器日志,玩家永远看不到;要说话必须显式调用 say/whisper
@@ -618,6 +634,20 @@ namespace GameServer.Bots
 
             sb.Append("[该干嘛?]");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// 从模型文本里抢救"假说话":它把 [动作] say({"text":"..."}) 或 引号里的台词 写成文字而不是发起调用。
+        /// 优先抠 say(...) 参数;抠不到就找最后一句引号内的中文台词(长度合理才算)。
+        /// </summary>
+        private static string SalvageFakeSay(string content)
+        {
+            if (string.IsNullOrEmpty(content))
+                return null;
+            var match = System.Text.RegularExpressions.Regex.Match(content, @"say\s*\(?\s*\{?\s*""?text""?\s*[:=]\s*""([^""]{1,120})");
+            if (match.Success)
+                return match.Groups[1].Value.Trim();
+            return null;
         }
 
         private static string TruncateText(string text, int max)
