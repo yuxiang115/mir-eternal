@@ -118,15 +118,15 @@ namespace GameServer.Bots
             //   [1] user   = 记忆(低频重写,只损失其后历史的缓存)
             //   [2..]      = 对话历史(append-only,永不改动 → 前缀稳定)
             _conversation.Add(new LlmMessage("system", BuildSystemPrompt()));
-            // 记忆一次性注入,之后永不动(重写=打碎后面所有 prefix cache)。
-            // 运行中记忆更新走 remember 工具(只落盘),下次启动/压缩时才重新注入。
-            _conversation.Add(new LlmMessage("user", "[你的记忆(上线时加载)]\n" + Memory.BuildPromptSection(null)));
+            // 纯 append 架构:无任何特殊位置消息
+            // [0]=system(永不变) [1..]=纯对话流(只 append,永不改)
+            // 记忆/地图走正常对话消息(append),压缩时整体 reset 重来
         }
 
-        /// <summary>已废弃:记忆层不再重写。记忆只在启动时注入一次;运行中 remember 落盘。</summary>
+        /// <summary>已废弃:不做任何消息重写。</summary>
         public void RebuildSystemPrompt()
         {
-            // no-op: deliberate — rewriting messages[1] invalidates the entire prefix cache
+            // no-op: pure append-only architecture
         }
 
         /// <summary>最近 10 分钟在视野里出现过/聊过天的人,他们的记忆优先检索。</summary>
@@ -399,11 +399,13 @@ namespace GameServer.Bots
                     ? llm.ReasoningEffortPlan
                     : llm.ReasoningEffortFast;
 
-                // 进新地图时一次性注入静态地图信息(刷怪点/出口/技能)—— append 到历史,被缓存
+                // 进新地图:地图信息作为普通消息 append(自然进历史被缓存)
                 if ((Player?.CurrentMap?.MapId ?? 0) != _lastMapInfoInjected)
                 {
                     _lastMapInfoInjected = (Player?.CurrentMap?.MapId ?? 0);
-                    InjectMapInfo(snapshot);
+                    var mapMsg = BuildMapInfoMessage(snapshot);
+                    if (mapMsg != null)
+                        _conversation.Add(new LlmMessage("user", mapMsg));
                 }
                 _conversation.Add(new LlmMessage("user", observation));
                 try
@@ -532,14 +534,12 @@ namespace GameServer.Bots
             }
         }
 
-        /// <summary>把快照讲成"人话观察",紧凑省 token,而不是全量 JSON。</summary>
-        /// <summary>进图时一次性注入静态地图信息(append 到历史,被 prefix cache 命中,不用每轮重发)。</summary>
-        private void InjectMapInfo(BotSnapshot snapshot)
+        /// <summary>进图时构建地图信息消息(纯 append,返回 null 表示没内容)。</summary>
+        private string BuildMapInfoMessage(BotSnapshot snapshot)
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("[地图信息] ").Append(snapshot.MapName).Append(" 你刚进入这张图.静态情报:").Append((char)10);
 
-            // 刷怪点(全图,按距离)
             if (snapshot.SpawnSpots.Count > 0)
             {
                 sb.Append("刷怪点: ");
@@ -548,7 +548,6 @@ namespace GameServer.Bots
                 sb.Append((char)10);
             }
 
-            // 出口
             if (snapshot.Exits.Count > 0)
             {
                 sb.Append("出口: ");
@@ -557,8 +556,7 @@ namespace GameServer.Bots
                 sb.Append((char)10);
             }
 
-            if (sb.Length > 30)
-                _conversation.Add(new LlmMessage("user", sb.ToString()));
+            return sb.Length > 30 ? sb.ToString() : null;
         }
 
         private string BuildObservation(BotSnapshot s)
@@ -745,8 +743,8 @@ namespace GameServer.Bots
 
         private void TrimHistory()
         {
-            // 保留 [0]=system(公共头+人格) 和 [1]=记忆消息,加最近 N 轮 user/assistant
-            var headCount = 2;
+            // 纯 append:只保留 [0]=system,其余是对话(纯截尾,无特殊位置)
+            var headCount = 1;
             var maxMessages = headCount + BotManager.Config.MaxHistoryTurns * 2;
             if (_conversation.Count <= maxMessages)
                 return;
@@ -850,10 +848,10 @@ namespace GameServer.Bots
                     return;
                 }
 
-                _conversation.RemoveRange(2, keepFrom - 2);
-                // 压缩时重新注入最新记忆 + 浓缩经历(一次写,不再动)
-                var memoryRecall = Memory.BuildPromptSection(null);
-                _conversation.Insert(2, new LlmMessage("user", "[你的记忆(压缩时刷新)]\n" + memoryRecall + "\n\n[更早的经历,凭这个回忆]\n" + summary));
+                // 压缩 = 单一 reset:清掉 [1..] 全部,放一条浓缩摘要(含记忆要点)
+                // 之后继续纯 append — cache 从这里重新积累(一次性 miss,然后稳定)
+                _conversation.RemoveRange(1, _conversation.Count - 1);
+                _conversation.Add(new LlmMessage("user", "[你之前的记忆和经历(压缩浓缩)]\n" + summary));
 
                 // "要点"部分写进长期记忆,不随会话丢
                 var idx = summary.IndexOf("要点");
