@@ -1,8 +1,9 @@
 # mir-eternal LLM 玩家 Bot 完整架构文档
 
-> **版本**:v2.0 — 2026-10-09(供 GPT review)
+> **版本**:v3.0 — 2026-10-09(供 GPT review;v2.0 基础上按 GPT 第二轮意见重设计 §14)
 > **目标**:在传奇永恒(Mir 3D)私服中植入多个 LLM 驱动的"活人玩家"—— 他们有自己的人格、记忆、目标,像 2003 年网吧里的真实玩家一样生活:打怪练级、捡装备、学技能、组队、聊天、赚钱。真人玩家在游戏里分辨不出来。
-> **文档结构**:§1-13 为**已实现(as-built)**;§14 为拟人化升级路线图(整合 GPT 实施方案 / Gemini 拟人指南 / DeepSeek V4 角色沉浸实践三方输入);§15 运维要点。
+> **文档结构**:§1-13 为**已实现(as-built)**;§14 为 **Player Life Simulation Layer**(GPT 第二轮 review 重设计);§15 运维要点;§16 参考。
+> **总检验标准(GPT 提出,本文档接受)**:假设服务器里只有这 12 个 Bot、没有任何真人玩家,它们能不能自己形成一个有趣的小型游戏社会?如果答案是否定的,再好的聊天 Prompt 也解决不了根本问题。
 
 ---
 
@@ -483,93 +484,201 @@ Bot 私聊 bot → BotToolCatalog.Whisper → 直接 RecordChat(投递到对方�
 
 ---
 
-## 14. 拟人化升级路线图(待实施,供 review)
+## 14. Player Life Simulation Layer(v3.0 重设计,待实施)
 
-> 三方输入:①GPT 实施方案(AttentionGate/IntentExecutor/SocialTransaction/BehaviorPersona/固定low/Phase A-D);②Gemini 拟人指南(具体人设/口语化/情绪与缺点/对话规则);③DeepSeek V4 角色沉浸实践(github deepseek_v4_rolepaly_instruct:思维链沉浸指令)。
-> **核心共识:真实感 ≠ 话术。真实感 = 动机持续性 × 有限注意力 × 人物差异 × 社会关系 × 经历改变行为 × 可执行的游戏目标。**
+> 输入:GPT 第二轮 review(2026-10-09)。判断:v2.0 方向正确但不够深——缺**自主生活、社会关系演化、行为动机、有限认知、群体生态**五块;现有 12 人更像"一批有社交能力的挂机机器人",不是"一个社会"。
+> **核心转变**:从"拟人化 = 会聊天 + 有人设"转向"拟人化 = 有自己的生活"。链路:**个人目标 → 日常活动 → 产生经历 → 形成认知 → 改变关系 → 影响之后的选择**。
+> **总原则(禁止事项)**:不追求刻意随机性。不为像人而随机犯错、为有情绪而随机生气、为不机械而随机换目标、为热闹而找人说话。人类行为是**有限认知 × 不同欲望 × 个人习惯 × 环境约束下的有界理性行为**——红缨固执是因为不服输,不是系统每 10 分钟随机触发固执。少量随机性只用于打破完全相同的选择,核心决策必须受持续状态和个人经历约束。
 
-### 14.1 GPT 方案模块 × 现状映射
+### 14.0 现状自评(对照 GPT 八维度)
 
-| GPT 方案模块 | 现状 | 差距 |
+| 拟人化维度 | 现状 | 差距判断 |
 |---|---|---|
-| 固定 deepseek-flash + low + thinking | ✅ 已达成 | 无(曾踩 effort 切换碎缓存的坑,已回滚统一) |
-| Append-only + 缓存优先 | ✅ 已达成 | 无(94-98% 实测) |
-| StateReconciler(事实vs记忆) | 🟡 部分 | ReconcileMemory 只处理等级倒退;待扩展为 WorldEpoch/CharacterGeneration 代际制 |
-| WakeScheduler(合并/去重/限流) | 🟡 部分 | ScheduleThink 已有分级间隔;缺事件合并(同话题多事件仍逐条唤醒)与注意力评分 |
-| AttentionGate(值不值得理) | 🟡 部分 | 聊天距离≤15格过滤已有;缺"陌生泛喊默认忽略/打怪中聊天降权/重复话题合并"的可解释评分 |
-| IntentExecutor(意图状态机) | 🟡 部分 | 意图互斥已解决(独立GrindTravel/意图锁);缺 PLAN→PREPARE→TRAVEL→ACT→VERIFY 完成证明与失败预算 |
-| SocialTransaction(组队事务) | 🟡 部分 | 组队工具+反射协同+CharId铁律已有;缺 DISCOVERED→INVITE_PENDING→JOINED 服务器回执确认生命周期 |
-| BehaviorPersona 三层(StableTraits/Drives/Mood) | 🟡 部分 | 静态 PersonaCard 有;缺数值化 traits/drives 与事件驱动的 Mood |
-| Bot-Bot 链式唤醒去重 | 🔴 未做 | conversationId/replyBudget 机制缺 |
-| 错峰上线/独立日程 | 🔴 未做 | 12人同秒上线同图;PersonaCard 作息字段未生效 |
+| 人设和语言风格 | ✅ 已实现 | 基础不错 |
+| 独立行为目标 | 🟡 部分 | 仍偏向自动挂机,人人同一生活模式 |
+| 个人生活节奏 | 🔴 缺失 | 12 人同秒上线同图,作息字段未生效 |
+| 社交主动性 | 🟡 部分 | 被动回应为主,缺少有动机的主动接触 |
+| 人际关系演化 | 🟡 部分 | 关系是数据标签(Affinity:60),无事件成因 |
+| 情绪与性格 | 🟡 计划中 | v2.0 方案过于公式化(加减分状态机) |
+| 认知与知识差异 | 🔴 基本缺失 | 人人查同一攻略库 = 人人全知 |
+| 群体生态 | 🔴 基本缺失 | 无社会网络初始条件,无涌现结构 |
 
-### 14.2 分阶段计划
+### 14.1 机制一:LifeDirector —— 每个 bot 内部的生活调度器(P0)
 
-**Phase A:消除 AI 痕迹(P0,改动小收益大)**
-- [ ] reasoning_content 回传验证:写 DeepSeek API 集成测试(thinking+tools 多轮),明确 400 边界;需要则 LlmMessage 增加 ReasoningContent 字段回传
-- [ ] 下线 salvage 代发(§8.2 第3步),失败改"保留未读+超时确定性短回复"
-- [ ] 合法 NO_ACTION:无动作轮不再视为失败;移除强迫输出
-- [ ] RidingBook 提示过滤;重复检查背包/技能类触发去重
-- 验收:无强行聊天;API 协议异常为零;命中率不恶化
+**不是中央导演**。每个 BotBrain 内部一个生活状态机,让人物有生活连续性,而不是每次醒来都重新决定去哪刷怪。
 
-**Phase B:行为一致性(P0/P1)**
-- [ ] WorldEpoch/CharacterGeneration:角色重建生成新代际,旧等级进 history 不进当前
-- [ ] IntentExecutor:grind 从"开关"升格为带 VERIFY 的任务状态(如"攒2000金":TRAVEL→ACT→`gold>=2000`→COMPLETE)
-- [ ] AttentionGate 评分制:私聊+100/点名+70/邀请+75/熟人+25/重复话题-50/危险中-60;≥70 唤醒,30-70 进 SocialInbox,<30 忽略
-- [ ] 事件合并:同 actor 同话题短时合并为一次唤醒
-- 验收:低级号不再锁高级精英;移动意图不抖动;无动作调用占比下降
+#### 四层目标栈
 
-**Phase C:社交与人格(P1)**
-- [ ] BehaviorPersona 数值化(traits/drives 影响选目标/组队意愿/风险容忍,不只是台词)
-- [ ] SocialTransaction 组队闭环:邀请→服务器回执 JOINED 才更新状态;超时重试预算
-- [ ] 关系细分:familiarity/trust/respect/goodwill/rivalry + 未解决事项("借了5瓶红药未还")
-- [ ] Bot-Bot 群聊 replyBudget:单 bot 不连续回应同群消息
-- [ ] Mood 事件驱动:死亡 frustration+0.2、好友赠药 goodwill+0.12,带 causeEventId,缓慢回归基线
-- 验收:同一"++++"邀请,不同 bot 做出**实际不同选择**(加入/无视/反问效率),而非不同台词
+| 层 | 时间尺度 | 内容示例(红缨) | 存储 |
+|---|---|---|---|
+| 长期追求 LifePursuit | 数天~数周 | "打金效率翻倍,换裁决" | BotMemory.Goals(已有)+追求权重 |
+| 当前计划 DailyPlan | 一个上线时段 | "今晚:先把昨天欠的药钱补上→带水晶之恋升到8级→有空自己刷半兽人" | BotLife 新增,登录时由 LLM 从追求+待办+昨日未竟生成 |
+| 当前活动 Activity | 分钟~小时 | "正在带水晶之恋打羊" | 现有意图(AutoGrind/Follow/Move)就是它,升格为有名有据的活动 |
+| 临时欲望 Whim | 秒~分钟 | "看见血饮狂刀换了新刀,想问问哪掉的" | 事件触发生成,带衰减,过期消失 |
 
-**Phase D:长期成长(P2)**
-- [ ] 错峰上下线(PersonaCard 作息生效)、活动偏好分化(打金/探路/带新人)
-- [ ] 反思改重要事件触发(死亡/连续失败/关系突变),带去重
-- [ ] NPC 任务闭环接入高级目标
-- 验收:多日回放中人物态度/目标/熟人关系连续
+**调度时机**:登录时生成 DailyPlan;活动完成/失败时推进;重大事件(朋友求助/掉好装备/死亡)可打断重排;下线时结算(未竟事项进 Commitment/明日待办)。
 
-### 14.3 提示词拟人化增强(Gemini 指南落地)
+**生活重心不绑定死**:人设卡给初始倾向(血饮狂刀=独刷练级、乱世佳人=组织队伍、毒玫瑰=竞争升级、夜色无声=探图独处),但允许事件改变——红缨今天想赚钱,朋友求助时可能先帮忙;血饮狂刀平时沉默,拿到好装备也可能主动展示。
 
-在 CommonPromptHead(字节稳定,版本号管理)追加:
+**作息生效(P0)**:PersonaCard 的"作息"字段接入 BotManager——按时间窗 Spawn/Dismiss,实现错峰上下线;离线期间只推进约定/时间/状态衰减,不伪造练级成果。测试环境可放宽。
+
+#### 与现有代码的落点
+
+- `BotBrain`:新增 LifeState(四层栈)+ 登录/完成/打断三类重排入口(都走 LLM 决策,程序只管状态存取)
+- `BotManager`:按 BotConfig 作息窗错峰 Spawn;下线结算钩子
+- `BotSnapshot`:观察增加 [今天的计划] 与 [临时欲望] 区块
+- 反射层不动:Activity 仍由现有意图机制执行
+
+### 14.2 机制二:Bounded Attention —— FocusState + SocialInbox(P0)
+
+v2.0 的评分制(私聊+100/熟人+25/危险-60)太机械。真实玩家有时专心打怪、有时无聊想找人说话、有时看见消息懒得回、有时在等某个人的消息。
+
+#### FocusState(注意力状态,由活动+情境推导,非随机)
+
+| 状态 | 进入条件 | 消息处理 |
+|---|---|---|
+| Focused | 战斗中/赶危险路/濒死 | 只处理生存与队友紧急信号;其余全进 SocialInbox |
+| Casual | 挂机弱怪/购物/回城补给 | 逐条看,选择回/不回/晚点回 |
+| Social | 城里/刚聊完天/无所事事带人 | 秒级响应倾向,主动搭话概率高 |
+| AFK | 刻意休息/挂机收菜式在线 | 全部进 inbox,回到 Casual 时统一处理 |
+
+#### SocialInbox(未读信箱,延迟有因果)
+
+- 每条入站消息:立即唤醒 / 进 inbox(未读)/ 记入经历但不回应 / 未关注直接丢弃——四档由 FocusState+关系+内容决定
+- **延迟必须有合理原因**:红缨打怪时水晶之恋喊她,没回应;40 秒后红缨回城补药,观察里出现 `[未读] 水晶之恋 40秒前: 红缨姐你多少级了?`,她才回"刚在打怪,啥事?"——**不是随机制造延迟,是状态切换后补处理**
+- inbox 带 TTL:过期降级为"记得有人找过我"的一句话经历;但承诺/邀请类过期后须重新核实状态
+
+#### 落点
+
+- `BotBrain.ScheduleThink`:事件先过 FocusState 分诊,不再一律立即唤醒
+- `BotSnapshot`:[未读消息] 区块(谁/多久前/说了什么)
+- `BotMemory`:notice-without-reply 的简要经历(供"上次没理他"的印象)
+
+### 14.3 机制三:SocialHistory —— 六维关系 + 事件证据(P1)
+
+单条 `"Relation":"朋友","Affinity":60` 太单薄,且变化无因。升级:
+
+```json
+{
+  "person": "水晶之恋",
+  "dimensions": {
+    "Familiarity": 0.73,
+    "Trust": 0.67,
+    "Affection": 0.58,
+    "Respect": 0.41,
+    "Rivalry": 0.05,
+    "Reciprocity": {"owed": "她借过我5瓶红药", "owes": null}
+  },
+  "history": [
+    {"d": "10-08", "e": "组队打羊,她挂了没抱怨", "Δ": "Respect+Trust"},
+    {"d": "10-09", "e": "借我5瓶红药", "Δ": "Reciprocity+Affection"}
+  ],
+  "impressions": ["她以前帮过我", "操作不算强但心态好"]
+}
+```
+
+- **关系变化必须由事件驱动**:每次 Δ 记录来源事件;禁止"聊得开心好感+10"式无因暴涨
+- **压缩保印象弃细节**:bot 可以忘记"5瓶",保留"她以前帮过我"——impressions 是 SocialHistory 的记忆压缩形态
+- **既竞争又合作**:毒玫瑰×魔法小王子可以 Rivalry 高同时 Respect 高——竞争等级但遇强怪合作,比"好友/敌人"二值真实
+- update_relation 工具签名扩展:LLM 报事件+维度变化,程序记账;人情人情(Reciprocity)进观察,影响"这次帮不帮"的取舍
+
+### 14.4 机制四:Knowledge Boundary —— 三层知识(P1,GPT 评定收益最高项之一)
+
+现状:人人可查同一 check_guide 全量攻略 = 人人全知,这是最重的 AI 痕迹之一。
 
 ```
-【说话的规矩】
-- 短句为主,可以没头没尾;"嗯""1""组个"都是合法回复
-- 不许用"第一、第二、第三"列表腔说话;不写作文
-- 可以有情绪:烦了就短,开心就多打两个字,被坑会念叨
-- 不知道就说不知道("这我真不知道""没去过"),不编
-- 不是每句话都值得回;不感兴趣可以沉默(除被私聊点名)
-- 同一句话不要全服复读;口头禅少量、因人而异
+GameTruth        服务器真实数据(怪物血量/掉落表/地图/商店价)
+   ↓ 只能通过以下渠道进入个人认知
+PersonalKnowledge 角色亲历:自己杀过的怪的掉落印象、走过的图、看过的价
+   ↓ 可掺杂推断
+PersonalBelief   角色相信的判断,可能不准("听说沃玛爆裁决"=传闻)
 ```
 
-PersonaCard 增加可选"缺点"字段(固执/路痴/上头/抠门),并允许 LevelStage 与缺点共同约束行为(如固执角色死亡反思后仍倾向原策略 1-2 次才换)。
+#### 规则
 
-**个人语言习惯**(替代全员黑话):每 bot 持久化"称呼表/长短偏好/是否用感叹号/给怪起的绰号(被稻草人连杀后喊'破稻草人')"——绰号由真实经历生成,是最廉价的真实感。
+- **check_guide 权限化**:只返回 ①本职业 ②本级段 ③与已遇内容相邻 的条目;"听说"类条目带来源与置信度
+- **亲历自动记账**:击杀→掉落印象(频率,不是精确表);到访地图→区域解锁;交易→价格印象——写进 BotMemory.Knowledge(remember "知识:" 前缀已有路由)
+- **错误认知的合法来源**:信息不全/传闻/有限经验——**严禁随机注入错误攻略**
+- **认知可以被纠正**:毒玫瑰听说某精英爆好装备→去打→打不过→Belief 修正("那玩意儿不是我这个级能碰的")
+- **知识可传播**:问熟人(whisper)、看世界频道讨论、读"攻略帖"(游戏内信件/NPC)——熟人更愿意讲(Trust 高回答更详细)
 
-### 14.4 V4 角色沉浸实验(低成本试点)
+#### 落点与风险
 
-github `deepseek_v4_rolepaly_instruct` 发现:在**首轮 user 消息末尾**追加【角色沉浸要求】可让 V4 思维链进入第一人称内心戏模式("(心想:他跟我打招呼了…心跳加速)"),后续轮次因指令留存自动生效;另有【思维模式要求】反向切纯分析。
+- `BotGuide`:按 Knowledge 过滤返回;`BotSnapshot` 的 SpawnSpots 从"全图"收窄为"已解锁区域+传闻区域(带?)"——**注意分阶段**:先做 check_guide 权限化(纯 prompt 侧),后做 SpawnSpots 收窄(影响寻路效率,需观察挂机挪窝退化)
+- 初始 Knowledge 种子:每人 3-5 条符合人设的初始已知(红缨懂打金路线不懂法师;精灵之吻几乎全不懂,靠问)
 
-与本架构的兼容性极佳:我们的 messages[1] 是一次写入永不变的地图信息——把沉浸 marker 拼在其末尾,即获得"一次注入、永久生效、不破坏 append-only/缓存"的沉浸开关。注意:该技巧非 100% 生效(README 自述需多 roll),且只改 reasoning_content 风格不改输出协议;先在 2-3 个 bot 上 A/B,看聊天自然度与 tool call 合规率是否受影响。
+### 14.5 机制五:MotivationConflict —— 动机冲突取舍(P1)
 
-### 14.5 A/B 评测口径
+Mood 加减分容易沦为情绪状态机。真实感更强的单位是**相互矛盾的欲望**:
 
-| 指标 | 采集 | 期望 |
+```
+红缨案例:
+  欲望A: 打金(收益高,正打到一半)
+  欲望B: 履行承诺 20:00 带水晶之恋升级(还有25分钟)
+  可选: 继续/履约/协商改时间/爽约
+```
+
+- **观察显式呈现冲突**:`[冲突] 你答应了20:00带水晶之恋(还剩25分钟),但半兽人正刷得起劲`——取舍交给 LLM 按人格+经历+关系做
+- **选择不必最优**:责任感强的人为朋友牺牲收益;好胜的人明知不划算也挑战——人格权重偏置决策,不决定决策
+- **后果持续**:爽约→对方 Trust 下降(事件记账,进 SocialHistory);履约→Reciprocity 人情
+- **硬边界**:人格固执不得绕过反射层生存检查(IsSafeTarget/逃跑/喝药照常);不得无限重复失败动作(失败预算照旧)
+
+### 14.6 机制六:Social Emergence —— 群体生态(P1)
+
+不写剧情,只设**社会网络初始条件**,其余靠个人目标碰撞涌现:
+
+- 初始种子(一次性,写进 BotConfig):若干对"熟人"(乱世佳人×水晶之恋 老同事;赵子龙×红缨 师徒)、若干对"听说过"(毒玫瑰听说过魔法小王子很能装)、一两对"潜在竞争"(毒玫瑰×魔法小王子 同期冲级)、其余"陌生"
+- **涌现目标形态**:固定练级搭档/打金小团体/竞争对子/交易伙伴/因爽约疏远的朋友/从陌生建立信任——全部由 SocialHistory 事件累积自然产生,`_colony.md` 呈现关系网快照供观察
+- **理想轨迹示例(涌现而非编排)**:乱世佳人真需要队友→whisper 两个熟人→一个拒绝(正在冲级)→另一个带上自己的朋友→成队。没有任何中央代码安排这一串
+- **安静时段合法**:有时服务器就是几个人默默练级、有人城里挂机、有人没上线——这也是玩家生态
+
+### 14.7 优先级重排(GPT 版,替代 v2.0 Phase A-D)
+
+| 级 | 模块 | 理由 |
 |---|---|---|
-| LLMCallsPerBotHour | JSONL think 行 | 降但重要交互保留 |
-| MeaningfulWakeRate | 引起实际动作的唤醒/总唤醒 | 升 |
-| NoActionCallRate | 无工具无状态改变调用占比 | 降 |
-| CacheHitRatio | System.log [Bot缓存] | 维持 94%+ |
-| DuplicateActionRate | 短时重复同意图/邀请 | 降 |
-| TeamJoinCompletionRate | 回执 JOINED/决定参加 | 升 |
-| 真人盲评 | "讲话自然吗/行为性格一致吗/各有所事吗" | A<B<C |
+| **P0** | LifeDirector + 个人日程 | 先让每个人真正有自己的事 |
+| **P0** | IntentExecutor 持续目标 | 有目标后能坚持执行,允许打断恢复(意图互斥已有底子) |
+| **P0** | AttentionGate(FocusState)+ SocialInbox | 不会所有人都对所有消息反应 |
+| **P1** | SocialHistory + 六维关系 | 长期关系有实际原因和结果 |
+| **P1** | Knowledge Boundary | 每个人有不同的知识与认知 |
+| **P1** | MotivationConflict | 人物能做出有性格的取舍 |
+| **P1** | Social Emergence | 形成真正的小团体和竞争关系 |
+| **P2** | Mood / 表达习惯(含 v2.0 的 Gemini 提示词条款、V4 角色沉浸实验) | 前面系统成立后,语言差异自然产生 |
+| **P2** | 长期人格演化 | 经历影响之后的行为模式 |
 
-对照组:A=现状基线;B=+AttentionGate+IntentExecutor;C=+SocialTransaction+BehaviorPersona。
+**v2.0 遗留工程项仍然有效但降级为支撑项**(不占拟人化主线):reasoning_content 回传集成测试、salvage 下线、合法 NO_ACTION、RidingBook 噪音过滤、WorldEpoch 代际制、组队 SocialTransaction 服务器回执。
+
+**Prompt/语言风格移到 P2 的理由(GPT)**:只要前面的系统成立,DeepSeek 用普通聊天语言也会自然产生人物差异。V4 角色沉浸 marker(拼在 messages[1] 地图信息末尾,一次注入永久生效不破坏缓存)与 Gemini"说话的规矩"条款(禁列表腔/允许沉默/允许说不知道/缺点入卡)保留为 P2 清单,设计细节见 v2.0 存档(git 2c2fc526)。
+
+### 14.8 验收:涌现式场景(替代"同一句话不同回复")
+
+**场景:服务器第 5 天 20:15(期望可能出现的一条轨迹,非必现剧本)**
+
+1. 乱世佳人按 DailyPlan 准备下沃玛,whisper 联系合作过的水晶之恋
+2. 水晶之恋同意,但提出先回城买药(上次药不够的教训,来自她的 Episode)
+3. 毒玫瑰拒绝邀请——正在和魔法小王子竞争等级(Rivalry 驱动)
+4. 魔法小王子听说沃玛有好装备(Belief,来自传闻),主动要求加入,尽管队伍里有人不太信他(Trust 低)
+5. 乱世佳人权衡:人手不足+他战力尚可→接受(MotivationConflict 取舍)
+6. 探险中魔法小王子冒进引怪,队伍撤退;有人生气,有人觉得只是运气
+7. 第二天:乱世佳人仍愿组他但会提醒别乱冲;水晶之恋更倾向带稳妥队友——**SocialHistory 记账,影响下次组队选择**
+
+同时验收**安静时段**:晚上没人说话、各自练级、有人 AFK、有人没上线——不强行制造事件。
+
+### 14.9 Human-likeness 评测(替代纯工程指标)
+
+| 维度 | 验收问题 |
+|---|---|
+| Individuality | 隐藏角色名后,能否从行为轨迹认出不同玩家? |
+| Continuity | 今天的事件是否合理影响明天的选择? |
+| Social Believability | 是否形成真实的合作、分歧和关系变化? |
+| Autonomy | 不需要真人触发,Bot 能否独立开展有意义的活动? |
+| Imperfection | 是否表现出由有限知识、性格和处境导致的合理失误? |
+
+**实验 A(空服 72 小时)**:12 bot 无人干预运行 3 天——观察练级路线/熟人网络/经济行为/作息是否**分化**而非收敛为相似状态;关系网快照(_colony.md)是否出现稳定小团体。
+**实验 B(沉默真人)**:真人进入但不说话——bot 是否自然注意到真人、保持自己的生活、在有合理动机时才主动接触,而不是一看见真人就围上去聊天。
+**盲评**:行为轨迹(JSONL+聊天记录)交不知分组的测试者,重点区分"有意义的社交变化"与"产生了很多对话"。
+
+工程指标(v2.0 §14.5 的 A/B 口径:CacheHitRatio/DuplicateActionRate/TeamJoinCompletionRate 等)保留为**回归护栏**,确保拟人化改造不破坏稳定性与成本,但不再是拟人化的验收标准本身。
 
 ---
 
@@ -591,4 +700,5 @@ github `deepseek_v4_rolepaly_instruct` 发现:在**首轮 user 消息末尾**追
 2. Generative Agents(记忆/反思/计划/关系):https://github.com/joonspk-research/generative_agents
 3. Voyager(技能库/自动目标):https://github.com/MineDojo/Voyager
 4. DeepSeek V4 角色沉浸指令:https://github.com/victorchen96/deepseek_v4_rolepaly_instruct
-5. GPT 实施方案全文:`mir-eternal-deepseek-humanlike-low-effort-plan.md`(2026-10-09,Phase A-D 与模块设计来源)
+5. GPT 第一轮实施方案(Phase A-D 工程模块):`mir-eternal-deepseek-humanlike-low-effort-plan.md`(2026-10-09);v2.0 存档见 git `2c2fc526`
+6. GPT 第二轮 review(2026-10-09):Player Life Simulation Layer 六机制/LifeDirector/Bounded Attention/SocialHistory/Knowledge Boundary/MotivationConflict/Social Emergence/拟人度五维评测——本文档 §14 v3.0 的直接输入
