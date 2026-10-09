@@ -399,6 +399,12 @@ namespace GameServer.Bots
                     ? llm.ReasoningEffortPlan
                     : llm.ReasoningEffortFast;
 
+                // 进新地图时一次性注入静态地图信息(刷怪点/出口/技能)—— append 到历史,被缓存
+                if ((Player?.CurrentMap?.MapId ?? 0) != _lastMapInfoInjected)
+                {
+                    _lastMapInfoInjected = (Player?.CurrentMap?.MapId ?? 0);
+                    InjectMapInfo(snapshot);
+                }
                 _conversation.Add(new LlmMessage("user", observation));
                 try
                 {
@@ -527,6 +533,34 @@ namespace GameServer.Bots
         }
 
         /// <summary>把快照讲成"人话观察",紧凑省 token,而不是全量 JSON。</summary>
+        /// <summary>进图时一次性注入静态地图信息(append 到历史,被 prefix cache 命中,不用每轮重发)。</summary>
+        private void InjectMapInfo(BotSnapshot snapshot)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("[地图信息] ").Append(snapshot.MapName).Append(" 你刚进入这张图.静态情报:").Append((char)10);
+
+            // 刷怪点(全图,按距离)
+            if (snapshot.SpawnSpots.Count > 0)
+            {
+                sb.Append("刷怪点: ");
+                foreach (var spot in snapshot.SpawnSpots)
+                    sb.Append(spot).Append("; ");
+                sb.Append((char)10);
+            }
+
+            // 出口
+            if (snapshot.Exits.Count > 0)
+            {
+                sb.Append("出口: ");
+                foreach (var exit in snapshot.Exits)
+                    sb.Append(exit).Append("; ");
+                sb.Append((char)10);
+            }
+
+            if (sb.Length > 30)
+                _conversation.Add(new LlmMessage("user", sb.ToString()));
+        }
+
         private string BuildObservation(BotSnapshot s)
         {
             var sb = new System.Text.StringBuilder();
@@ -574,13 +608,7 @@ namespace GameServer.Bots
                 sb.Append('\n');
             }
 
-            if (s.LearnableSkills.Count > 0)
-            {
-                sb.Append("[可以学新技能了] ");
-                foreach (var sk in s.LearnableSkills)
-                    sb.Append(sk).Append(' ');
-                sb.Append("等级够了 —— 买书(buy_item)或捡到书就 learn_skill,学了打架更强").Append((char)10);
-            }
+
 
             if (s.GroundItems.Count > 0)
             {
@@ -590,15 +618,8 @@ namespace GameServer.Bots
                 sb.Append((char)10);
             }
 
-            if (s.SpawnSpots.Count > 0)
-            {
-                sb.Append("[本图刷怪点] ").Append(string.Join("; ", s.SpawnSpots)).Append('\n');
-            }
-
-            if (s.Exits.Count > 0)
-            {
-                sb.Append("[这张图的出口] ").Append(string.Join("; ", s.Exits)).Append('\n');
-            }
+            // 静态地图信息(刷怪点/出口)不在这里 — 进图时一次性 append 到历史(被缓存,省输入)
+            // 动态信息(掉落/怪/玩家/聊天/状态)每轮在这里
 
             if (s.FollowTarget != null)
                 sb.Append("[正在跟随] ").Append(s.FollowTarget).Append('(').Append(s.FollowTargetDistance).Append("格)\n");
@@ -1342,6 +1363,7 @@ namespace GameServer.Bots
         /// <summary>本轮目的地的路径是否已重算过一次(重算后仍卡才放弃)。</summary>
         private bool _pathRetried;
         private DateTime _lastRepathLog;
+        private int _lastMapInfoInjected = -1;
 
         /// <summary>设定"走到某扇门然后过图"的路线(打断当前意图)。</summary>
         public void SetGateRoute(TeleportGates gate)
