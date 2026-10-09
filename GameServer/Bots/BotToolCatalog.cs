@@ -569,9 +569,15 @@ namespace GameServer.Bots
                     continue;
                 if (player.MainSkills表.ContainsKey(item.SkillId))
                     continue; // 已学过,找下一本
-                player.UseItem(1, item.物品位置.V);
-                BotLogger.Log(brain.Definition.Name, "act", "learn_skill: " + template);
-                return "读了 " + template + ",学会新技能!多放多用涨熟练(用 check_skills 看学了啥)";
+                var learned = player.LearnSkill(item.SkillId);
+                if (learned)
+                {
+                    player.ConsumeBackpackItem(1, item);
+                    BotLogger.Log(brain.Definition.Name, "act", "learn_skill: " + template);
+                    return "读了 " + template + ",真的学会了!(check_skills 确认,放技能多用涨熟练)";
+                }
+                BotLogger.Log(brain.Definition.Name, "act", "learn_skill失败: " + template);
+                return "读 " + template + " 没学会(可能已经学过,或等级/条件不满足)";
             }
             return bookName.Length > 0 ? "背包里没有「" + bookName + "」或已学过" : "背包里没有可读的技能书(商店买或打怪爆)";
         }

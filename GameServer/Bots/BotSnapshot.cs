@@ -51,6 +51,8 @@ namespace GameServer.Bots
         public List<SeenChat> Chat = new List<SeenChat>();
         /// <summary>地面掉落(周围2格,名字+数量) —— 打死的怪掉了什么要看得见,不然永远不捡。</summary>
         public List<GroundItem> GroundItems = new List<GroundItem>();
+        /// <summary>等级已够但还没学的本职业技能(书名/需求等级) —— 提示该去买书学了。</summary>
+        public List<string> LearnableSkills = new List<string>();
 
         /// <summary>这一轮新发生的事(视野/血量/等级/状态变化),没有就是空。</summary>
         public List<string> Events = new List<string>();
@@ -190,6 +192,19 @@ namespace GameServer.Bots
                 }
             }
             snapshot.GroundItems = snapshot.GroundItems.OrderBy(g => g.Distance).Take(8).ToList();
+
+            // ---- 可学技能提醒:等级够、还没学、职业匹配的技能书(玩传奇到点学技能是本能)
+            foreach (var template in GameItems.DataSheet.Values)
+            {
+                if (template.Type != ItemType.技能书籍 || template.NeedLevel <= 0 || template.NeedLevel > player.CurrentLevel + 2)
+                    continue;
+                if (template.NeedRace != GameObjectRace.通用 && template.NeedRace != player.CharRole)
+                    continue;
+                if (player.MainSkills表.ContainsKey((ushort)template.AdditionalSkill))
+                    continue;
+                snapshot.LearnableSkills.Add(template.Name + "(" + template.NeedLevel + "级)");
+            }
+            snapshot.LearnableSkills = snapshot.LearnableSkills.Take(4).ToList();
 
             // ---- 本图刷怪点(离得最近的几个,让 bot 知道怪刷在哪) ----
             foreach (var spawn in MonsterSpawns.DataSheet)

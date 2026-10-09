@@ -576,6 +576,14 @@ namespace GameServer.Bots
                 sb.Append('\n');
             }
 
+            if (s.LearnableSkills.Count > 0)
+            {
+                sb.Append("[可以学新技能了] ");
+                foreach (var sk in s.LearnableSkills)
+                    sb.Append(sk).Append(' ');
+                sb.Append("等级够了 —— 买书(buy_item)或捡到书就 learn_skill,学了打架更强").Append((char)10);
+            }
+
             if (s.GroundItems.Count > 0)
             {
                 sb.Append("[地上掉落] ");
@@ -1637,8 +1645,17 @@ namespace GameServer.Bots
                 return inscription.SkillId;
             }
 
-            var first = player.MainSkills表.Keys.FirstOrDefault();
-            return first;
+            // 没有职业初始铭文时:优先选已学的"高级"技能(编号更大的通常是主动技能),
+            // 学会基础射击(2041)后弓手就该用它(射程8),而不是继续贴脸普攻(2040,射程1)
+            ushort best = 0;
+            foreach (var key in player.MainSkills表.Keys)
+            {
+                var ins = player.MainSkills表[key];
+                if (ins == null) continue;
+                if (best == 0 || key > best)
+                    best = key;
+            }
+            return best;
         }
 
         private static ushort GetRaceStarterInscription(GameObjectRace race)
@@ -1661,11 +1678,19 @@ namespace GameServer.Bots
             if (SkillRangeCache.TryGetValue(skillId, out cached))
                 return cached;
 
+            // 真实射程在主体技能的 C_00 锚点节点上(模板.MaxDistance 字段不填),
+            // 弓手的"基础射击"射程8 —— 学了远程技能就不该贴脸平A
             var range = 1;
             foreach (var template in GameSkills.DataSheet.Values)
             {
-                if (template.OwnSkillId == skillId && template.MaxDistance > range)
-                    range = template.MaxDistance;
+                if (template.OwnSkillId != skillId || template.Nodes == null)
+                    continue;
+                foreach (var task in template.Nodes.Values)
+                {
+                    var anchor = task as Templates.C_00_CalculateSkillAnchor;
+                    if (anchor != null && anchor.MaxDistance > range)
+                        range = anchor.MaxDistance;
+                }
             }
             SkillRangeCache[skillId] = range;
             return range;
