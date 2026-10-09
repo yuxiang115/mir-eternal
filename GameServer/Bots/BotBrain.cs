@@ -538,6 +538,11 @@ namespace GameServer.Bots
                 sb.Append('\n');
             }
 
+            if (s.SpawnSpots.Count > 0)
+            {
+                sb.Append("[本图刷怪点] ").Append(string.Join("; ", s.SpawnSpots)).Append('\n');
+            }
+
             if (s.Exits.Count > 0)
             {
                 sb.Append("[这张图的出口] ").Append(string.Join("; ", s.Exits)).Append('\n');
@@ -1082,9 +1087,79 @@ namespace GameServer.Bots
             }
 
             if (best == null)
-                return true; // 挂机中但没怪:站着(药/捡东西照旧),不打扰 LLM
+            {
+                // 挂机中但视野内没怪:先站几秒等刷新,久了就自己挪窝去最近的刷怪点
+                if (_noMonsterSince == default(DateTime))
+                    _noMonsterSince = MainProcess.CurrentTime;
+                else if (MainProcess.CurrentTime > _noMonsterSince.AddSeconds(8.0) && MoveTarget == null)
+                {
+                    _noMonsterSince = MainProcess.CurrentTime;
+                    if (MoveToNearestSpawn(player))
+                        return true; // 正在挪窝
+                    _grindMoves++;
+                    if (_grindMoves >= 3)
+                    {
+                        // 挪了几次都没怪(或挪不动):别傻站,喊 LLM 来定夺(换图/查攻略/组队走)
+                        _grindMoves = 0;
+                        lock (ToolResults)
+                            ToolResults.Add("这附近彻底没怪了,挪窝也没用 —— 查攻略看该去哪(check_guide)、看出口换图(goto_map)、或者跟人组队走,别在这干站着");
+                        _nextThinkTime = MainProcess.CurrentTime;
+                    }
+                }
+                return true;
+            }
 
+            _noMonsterSince = default(DateTime);
+            _grindMoves = 0;
             CombatTargetId = best.ObjectId;
+            return true;
+        }
+
+        private DateTime _noMonsterSince;
+        private int _grindMoves;
+
+        /// <summary>走向本图最近的刷怪点(离当前位置超过25格才算"挪窝"),走路时清路逻辑照常接管拦路的怪。</summary>
+        private bool MoveToNearestSpawn(PlayerObject player)
+        {
+            MonsterSpawns nearest = null;
+            var nearestDistance = int.MaxValue;
+            foreach (var spawn in MonsterSpawns.DataSheet)
+            {
+                if (spawn.FromMapId != player.CurrentMap.MapId || spawn.Spawns == null || spawn.Spawns.Length == 0)
+                    continue;
+                // 怪太高级的点位不去(会被秒)
+                var tooHard = false;
+                foreach (var info in spawn.Spawns)
+                {
+                    Monsters template;
+                    if (Monsters.DataSheet.TryGetValue(info.MonsterName, out template) && template.Level > player.CurrentLevel + 10)
+                    {
+                        tooHard = true;
+                        break;
+                    }
+                }
+                if (tooHard)
+                    continue;
+
+                var distance = Math.Max(Math.Abs(spawn.FromCoords.X - player.CurrentPosition.X), Math.Abs(spawn.FromCoords.Y - player.CurrentPosition.Y));
+                if (distance >= 25 && distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearest = spawn;
+                }
+            }
+            if (nearest == null)
+                return false;
+
+            // 走向刷怪点附近一个随机偏移格(都挤一个点会互相挡路)
+            var target = new Point(
+                nearest.FromCoords.X + MainProcess.RandomNumber.Next(-4, 5),
+                nearest.FromCoords.Y + MainProcess.RandomNumber.Next(-4, 5));
+            if (!player.CurrentMap.CanPass(target))
+                target = nearest.FromCoords;
+            RebuildPath(target);
+            MoveTarget = target;
+            MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 附近没怪了,挪窝去 " + nearest.RegionName + "(" + target.X + "," + target.Y + ")");
             return true;
         }
 

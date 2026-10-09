@@ -44,6 +44,8 @@ namespace GameServer.Bots
 
         public List<SeenObject> Players = new List<SeenObject>();
         public List<SeenObject> Monsters = new List<SeenObject>();
+        /// <summary>本图刷怪点(最近几个:区域名/怪/方向距离) —— 村口没怪了,该知道往哪挪。</summary>
+        public List<string> SpawnSpots = new List<string>();
         /// <summary>当前地图的出口(传送门):名字+方向+目的地 —— 想换地图练级就得知道能去哪。</summary>
         public List<string> Exits = new List<string>();
         public List<SeenChat> Chat = new List<SeenChat>();
@@ -154,6 +156,23 @@ namespace GameServer.Bots
                 });
             }
             snapshot.Monsters = snapshot.Monsters.OrderBy(m => m.Distance).Take(5).ToList();
+
+            // ---- 本图刷怪点(离得最近的几个,让 bot 知道怪刷在哪) ----
+            foreach (var spawn in MonsterSpawns.DataSheet)
+            {
+                if (spawn.FromMapId != player.CurrentMap.MapId || spawn.Spawns == null || spawn.Spawns.Length == 0)
+                    continue;
+                var distance = Math.Max(Math.Abs(spawn.FromCoords.X - player.CurrentPosition.X), Math.Abs(spawn.FromCoords.Y - player.CurrentPosition.Y));
+                if (distance > 120)
+                    continue;
+                var mainMonster = spawn.Spawns.OrderByDescending(x => x.SpawnCount).FirstOrDefault();
+                if (mainMonster == null)
+                    continue;
+                Monsters template;
+                var monsterLevel = GameServer.Templates.Monsters.DataSheet.TryGetValue(mainMonster.MonsterName, out template) ? template.Level : 0;
+                snapshot.SpawnSpots.Add(spawn.RegionName + ":" + mainMonster.MonsterName + "(" + monsterLevel + "级x" + mainMonster.SpawnCount + "," + DirectionName(player.CurrentPosition, spawn.FromCoords) + distance + "格)");
+            }
+            snapshot.SpawnSpots = snapshot.SpawnSpots.OrderBy(x => x).Take(4).ToList();
 
             // ---- 当前地图出口(哪扇门通往哪张图,用中文图名) ----
             foreach (var gate in TeleportGates.DataSheet)
