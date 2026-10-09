@@ -93,6 +93,10 @@ namespace GameServer.Bots
         public string SelfNote = "";
         /// <summary>尚未被反思消化的事件数(达到阈值触发反思)。</summary>
         public int UnreflectedCount;
+        /// <summary>LifeDirector 骨架:当日计划(agent 每天自己定,观察常驻,跨重启存活)。</summary>
+        public string DailyPlan = "";
+        /// <summary>当日计划是哪天定的(MM-dd);不是今天就自动失效,提示重新定。</summary>
+        public string PlanDate = "";
 
         [JsonIgnore]
         public bool Dirty;

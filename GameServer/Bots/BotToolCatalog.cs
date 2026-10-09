@@ -87,6 +87,8 @@ namespace GameServer.Bots
                     Param("level", "integer", "查哪个等级段的(不填=自己当前等级)", required: false)),
                 Tool("set_goal", "给自己定一个长期目标(没有截止日的那种,如'冲40级''攒钱买裁决''交三个朋友')。定了会一直记着,做事围着它转。",
                     Param("text", "string", "目标")),
+                Tool("set_plan", "定今天的计划(一两句话,每天开始时定一次)。观察里会常驻提醒,过天自动作废,做完随时可以改。",
+                    Param("text", "string", "今天的安排,如'上午冲8级,傍晚和水晶之恋组队,睡前捡的垃圾装备找人卖掉'")),
                 Tool("drop_goal", "放弃一个目标(达成了或不想追了)。描述写一部分就行。",
                     Param("text", "string", "目标内容(一部分)")),
                 Tool("team_accept", "接受刚收到的组队邀请(谁邀请的就跟他一队)。"),
@@ -267,12 +269,32 @@ namespace GameServer.Bots
                             return "目标太空";
                         if (brain.Memory.Goals.Count >= 3)
                             return "目标太多记不住(最多3个),先 drop_goal 一个";
-                        if (brain.Memory.Goals.Contains(goal))
-                            return "已经定了这个";
+                        // 语义去重:精确相等或互相包含(去空白标点后)都算重复 ——
+                        // 实测出现过"升到10级(姐姐说10级就好玩了)"原样定两次,目标区全是垃圾
+                        var norm = System.Text.RegularExpressions.Regex.Replace(goal, @"[\s,，。;；!！?？~～]", "");
+                        var dup = brain.Memory.Goals.FirstOrDefault(g =>
+                        {
+                            var ng = System.Text.RegularExpressions.Regex.Replace(g, @"[\s,，。;；!！?？~～]", "");
+                            return ng == norm || (ng.Length >= 6 && norm.Contains(ng)) || (norm.Length >= 6 && ng.Contains(norm));
+                        });
+                        if (dup != null)
+                            return "已经有相近的目标了: " + dup + " —— 别重复立,围着它做就行";
                         brain.Memory.Goals.Add(goal);
                         brain.MemoryDirty = true;
                         BotLogger.Log(brain.Definition.Name, "memory", "定目标: " + goal);
                         return "目标已立: " + goal;
+                    }
+                    case "set_plan":
+                    {
+                        var plan = (args["text"]?.ToString() ?? "").Trim();
+                        if (plan.Length < 2)
+                            return "计划太空";
+                        var isNew = string.IsNullOrWhiteSpace(brain.Memory.DailyPlan);
+                        brain.Memory.DailyPlan = plan;
+                        brain.Memory.PlanDate = DateTime.Now.ToString("MM-dd");
+                        brain.MemoryDirty = true;
+                        BotLogger.Log(brain.Definition.Name, "memory", (isNew ? "定今日计划: " : "改今日计划: ") + plan);
+                        return (isNew ? "今天的计划已记下: " : "计划已改: ") + plan;
                     }
                     case "drop_goal":
                     {

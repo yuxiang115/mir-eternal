@@ -212,7 +212,8 @@ namespace GameServer.Bots
             "10. 组队别光嘴上说:调 team_invite 真发邀请。交易用 give_gold 转账或 drop_item 丢地上让对方捡(传奇规矩)。全服收货卖货用 shout(一次1000金币,值不值自己掂量)。打怪想放特定技能(群攻/毒/治疗)先 check_skills 再 use_skill。\n" +
             "11. **技能是练出来的**:打怪掉/商店买的技能书用 learn_skill 读了学,学了要多放(use_skill,熟练度越用越高);道士的召唤技能学完放出来就有宝宝帮你打;check_skills 随时看你都会啥。别一辈子只会普攻。\n" +
             "12. **组队就像传奇当年的队**:跟紧队长别乱跑(系统会自动跟),打队伍正在打的怪;队长照顾落下的队友。一起走、一起打、爆了东西说一声。\n" +
-            "13. **要有自己的盘算**:没目标就 set_goal 立一个(练级/攒钱/搞装备/交朋友),做事围着目标转;不知道这等级该去哪、觉得练得慢,先 check_guide 查攻略再定计划;去哪练、怎么分工,可以和朋友商量着来(商量也是玩的一部分)。目标达成了/不想要了 drop_goal。\n\n";
+            "13. **要有自己的盘算**:没目标就 set_goal 立一个(练级/攒钱/搞装备/交朋友),做事围着目标转;不知道这等级该去哪、觉得练得慢,先 check_guide 查攻略再定计划;去哪练、怎么分工,可以和朋友商量着来(商量也是玩的一部分)。目标达成了/不想要了 drop_goal。\n" +
+            "14. **每天有自己的安排**:观察里 [今天还没计划] 就调 set_plan 定今天的打算(一两句话,别写成作文)——上午干什么、跟谁约了、睡前想搞定什么。计划是给自己看的主线,不是任务清单,做完/过天就改。别每天醒来都从零想起。\n\n";
 
         private string BuildSystemPrompt()
         {
@@ -766,6 +767,14 @@ namespace GameServer.Bots
             // 长期目标常驻:做事围着它转
             if (Memory.Goals.Count > 0)
                 sb.Append("[你的目标] ").Append(string.Join(";", Memory.Goals)).Append('\n');
+
+            // LifeDirector 骨架:当日计划 —— 有就常驻提醒;新的一天/还没定就提示自己安排
+            // (区别于长期目标:这是"今天具体干什么",让每次醒来先对齐今天的主线)
+            var today = DateTime.Now.ToString("MM-dd");
+            if (Memory.PlanDate == today && !string.IsNullOrWhiteSpace(Memory.DailyPlan))
+                sb.Append("[今天的计划] ").Append(Memory.DailyPlan).Append('\n');
+            else
+                sb.Append("[今天还没计划] 想好今天干什么就调 set_plan 登记一两句(比如'上午冲8级,晚上找人组队')\n");
 
             // 成本护栏:观察超过800字符截断(LLM不需要全部细节,足够决策即可)
             if (sb.Length > 800)
@@ -1511,7 +1520,8 @@ namespace GameServer.Bots
         private LinkedList<Point> _grindPathSteps;
         private int _grindMoves;
 
-        /// <summary>走向本图最近的刷怪点(离当前位置超过25格才算"挪窝"),走路时清路逻辑照常接管拦路的怪。</summary>
+        /// <summary>走向本图最近的刷怪点(离当前位置超过15格才算"挪窝"),走路时清路逻辑照常接管拦路的怪。
+        /// 选点标准:怪等级≤自己+3(打得过才有收益,实测+10会把5级号一次次送去8级半兽人区送死),且不在黑名单里。</summary>
         private bool MoveToNearestSpawn(PlayerObject player)
         {
             MonsterSpawns nearest = null;
@@ -1520,12 +1530,14 @@ namespace GameServer.Bots
             {
                 if (spawn.FromMapId != player.CurrentMap.MapId || spawn.Spawns == null || spawn.Spawns.Length == 0)
                     continue;
-                // 怪太高级的点位不去(会被秒)
+                if (IsBlacklisted(spawn.FromCoords))
+                    continue; // 刚失败过的点位(地形过不去/太危险),10分钟内不重选
+                // 挪窝是去"长期打"的,只去打得住的点位:怪太高级会变成送死
                 var tooHard = false;
                 foreach (var info in spawn.Spawns)
                 {
                     Monsters template;
-                    if (Monsters.DataSheet.TryGetValue(info.MonsterName, out template) && template.Level > player.CurrentLevel + 10)
+                    if (Monsters.DataSheet.TryGetValue(info.MonsterName, out template) && template.Level > player.CurrentLevel + 3)
                     {
                         tooHard = true;
                         break;
@@ -1682,6 +1694,56 @@ namespace GameServer.Bots
             {
                 StepToward(player, target);
             }
+
+            // 挪窝卡死检测(与 ReflexMove 的 CheckStuck 同款振荡判定):
+            // 之前完全没有这层 —— 挪窝目标只有"走到"才清空,堵住就每 tick 撞墙(实测13分钟900+条堵死日志)
+            _grindRecent.Enqueue(player.CurrentPosition);
+            while (_grindRecent.Count > 8)
+                _grindRecent.Dequeue();
+            if (_grindRecent.Count >= 8 && _grindRecent.Distinct().Count() <= 3)
+            {
+                _grindRecent.Clear();
+                var failed = target;
+                BlacklistSpawnNear(failed, 10.0);
+                _grindTarget = null;
+                _grindPathSteps = null;
+                _noMonsterSince = default(DateTime); // 8秒后允许重新选点(黑名单会跳过刚失败的)
+                _grindTravelFails++;
+                lock (ToolResults)
+                    ToolResults.Add("挂机挪窝去(" + failed.X + "," + failed.Y + ")那边过不去(地形死角),这个点位拉黑10分钟换别处了");
+                if (_grindTravelFails >= 3)
+                {
+                    // 连环失败不是运气问题:这片区到不了/待不住,把决策权交还 agent
+                    _grindTravelFails = 0;
+                    AutoGrind = false;
+                    lock (ToolResults)
+                        ToolResults.Add("连着3次挪窝都过不去,挂机先停了 —— 想想是不是该换张图(goto_map)、查攻略(check_guide)或者找人组队");
+                    _nextThinkTime = MainProcess.CurrentTime;
+                    MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 挪窝连环失败,停挂机交还决策");
+                }
+            }
+        }
+
+        private readonly Queue<Point> _grindRecent = new Queue<Point>();
+        private int _grindTravelFails;
+        /// <summary>挪窝失败点位黑名单:(点位, 解禁时间)。防止放弃后立刻重选同一个到不了的点。</summary>
+        private readonly List<KeyValuePair<Point, DateTime>> _spawnBlacklist = new List<KeyValuePair<Point, DateTime>>();
+
+        private void BlacklistSpawnNear(Point spot, double minutes)
+        {
+            _spawnBlacklist.Add(new KeyValuePair<Point, DateTime>(spot, MainProcess.CurrentTime.AddMinutes(minutes)));
+            BotLogger.Log(Definition.Name, "event", "拉黑刷怪点(" + spot.X + "," + spot.Y + ") " + minutes + "分钟");
+        }
+
+        private bool IsBlacklisted(Point spot)
+        {
+            _spawnBlacklist.RemoveAll(kv => MainProcess.CurrentTime > kv.Value);
+            foreach (var kv in _spawnBlacklist)
+            {
+                if (Math.Max(Math.Abs(kv.Key.X - spot.X), Math.Abs(kv.Key.Y - spot.Y)) <= 12)
+                    return true;
+            }
+            return false;
         }
 
         private void ReflexMove(PlayerObject player)
