@@ -864,7 +864,12 @@ namespace GameServer.Bots
                 }
 
                 _conversation.RemoveRange(1, _conversation.Count - 1);
-                _conversation.Add(new LlmMessage("user", "[你之前的经历(压缩浓缩)]" + (char)10 + summary));
+                // 压缩后 [1] = 刚存盘的最新记忆 + 浓缩摘要(一次性,之后纯 append)
+                // 记忆从磁盘读 — 刚才 LLM 存的 remember 结果已经在了
+                var freshMemory = Memory.BuildPromptSection(null);
+                _conversation.Add(new LlmMessage("user",
+                    "[你的记忆]" + (char)10 + freshMemory + (char)10 + (char)10 +
+                    "[你之前的经历(压缩浓缩)]" + (char)10 + summary));
 
                 MainProcess.AddSystemLog("[Bot压缩] " + Definition.Name + " 完成: 记忆已存盘,上下文重置");
             }
