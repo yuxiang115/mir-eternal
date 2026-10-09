@@ -494,7 +494,7 @@ namespace GameServer.Bots
             if (distance > range)
                 return "距离" + distance + "格,超出射程" + range + "(先走近)";
             brain.UseSkillOnce((ushort)skillId, target);
-            return "已施放 " + skillId + " → " + target.ObjectName;
+            return "已施放[" + BotBrain.GetSkillName((ushort)skillId) + "] → " + target.ObjectName;
         }
 
         private static string DropItem(BotBrain brain, string name)

@@ -1470,10 +1470,11 @@ namespace GameServer.Bots
             {
                 _actionCounter = (byte)(_actionCounter + 1);
                 var hpBefore = target.CurrentHP;
+                var skillName = GetSkillName(skillId);
                 player.UseSkill(skillId, _actionCounter, target.ObjectId, target.CurrentPosition);
-                // TODO(v3调试): 验证攻击是否真的生效,定位"怪不掉血"
-                MainProcess.AddSystemLog("[Bot调试] " + Definition.Name + " UseSkill id=" + skillId + " 目标=" + target.ObjectName + "(" + target.ObjectId + ") 距离=" + distance
-                    + " 技能数=" + player.MainSkills表.Count + " 打前血=" + hpBefore + " 主手=" + (player.Equipment.TryGetValue(0, out var w) ? w.Name + "/" + w.NeedRace : "空"));
+                MainProcess.AddSystemLog("[Bot调试] " + Definition.Name + " 施放[" + skillName + "] → " + target.ObjectName
+                    + " 距离=" + distance + " 打前血=" + hpBefore + " 打后血=" + target.CurrentHP
+                    + " 主手=" + (player.Equipment.TryGetValue(0, out var w) ? w.Name : "空"));
             }
             else
             {
@@ -1888,6 +1889,22 @@ namespace GameServer.Bots
                 case GameObjectRace.龙枪: return 12000;
                 default: return 0;
             }
+        }
+
+        /// <summary>通过技能Id查名字(从铭文表查,缓存结果)。</summary>
+        private static readonly Dictionary<ushort, string> SkillNameCache = new Dictionary<ushort, string>();
+        public static string GetSkillName(ushort skillId)
+        {
+            string name;
+            if (SkillNameCache.TryGetValue(skillId, out name))
+                return name;
+
+            name = skillId.ToString();
+            // DataSheet 按 Index(SkillId*10+Id) 建键,Id=0 的基础铭文 Index 恰为 SkillId*10
+            if (InscriptionSkill.DataSheet.TryGetValue((ushort)(skillId * 10), out var ins))
+                name = ins.SkillName;
+            SkillNameCache[skillId] = name;
+            return name;
         }
 
         public static int GetSkillRange(ushort skillId)
