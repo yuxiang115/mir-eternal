@@ -476,10 +476,31 @@ namespace GameServer.Bots
                             if (salvaged != null)
                             {
                                 var lastWhisper2 = snapshot.Chat.LastOrDefault(c => c.Whisper);
+                                // 代发的调用必须同时进 ToolCalls(被执行)和 RawToolCalls(进历史配对),
+                                // 否则 assistant 消息里没有这个 tool_calls,回执就成了悬空 tool 消息 → DeepSeek 400
+                                var call = new LlmToolCall { Id = "call_salv_" + Guid.NewGuid().ToString("N").Substring(0, 8) };
                                 if (lastWhisper2 != null)
-                                    result.ToolCalls.Add(new LlmToolCall { Name = "whisper", Arguments = new JObject { ["player"] = lastWhisper2.From, ["text"] = salvaged } });
+                                {
+                                    call.Name = "whisper";
+                                    call.Arguments = new JObject { ["player"] = lastWhisper2.From, ["text"] = salvaged };
+                                }
                                 else
-                                    result.ToolCalls.Add(new LlmToolCall { Name = "say", Arguments = new JObject { ["text"] = salvaged } });
+                                {
+                                    call.Name = "say";
+                                    call.Arguments = new JObject { ["text"] = salvaged };
+                                }
+                                result.ToolCalls.Add(call);
+                                if (result.RawToolCalls == null) result.RawToolCalls = new Newtonsoft.Json.Linq.JArray();
+                                result.RawToolCalls.Add(new JObject
+                                {
+                                    ["id"] = call.Id,
+                                    ["type"] = "function",
+                                    ["function"] = new JObject
+                                    {
+                                        ["name"] = call.Name,
+                                        ["arguments"] = call.Arguments.ToString(Formatting.None),
+                                    },
+                                });
                                 MainProcess.AddSystemLog("[Bot兜底] " + Definition.Name + " 假说话被服务器代发: " + salvaged);
                                 BotLogger.Log(Definition.Name, "event", "假说话代发: " + salvaged);
                             }
@@ -543,6 +564,15 @@ namespace GameServer.Bots
                 {
                     _conversation.RemoveAt(_conversation.Count - 1); // 回滚观察,避免污染历史
                     _llmFailures++;
+                    // 历史协议损坏(tool 配对类 400)不会自愈,每轮重放都炸 —— 当场修复历史
+                    var exMsg = ex.Message ?? "";
+                    if (exMsg.Contains("role 'tool'") || exMsg.Contains("tool_calls"))
+                    {
+                        var before = _conversation.Count;
+                        SanitizeConversation();
+                        _llmFailures = 0; // 修复后给一次正常机会,不进暂停
+                        MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 会话历史协议损坏已自愈(" + before + "→" + _conversation.Count + "条)");
+                    }
                     if (_llmFailures >= 3)
                     {
                         _llmPausedUntil = MainProcess.CurrentTime.AddMinutes(1.0);
@@ -806,8 +836,76 @@ namespace GameServer.Bots
 
             var kept = _conversation.Take(headCount).ToList();
             kept.AddRange(_conversation.Skip(_conversation.Count - (maxMessages - headCount)));
+            // 切点若正好落在 assistant(tool_calls)/tool回执 组中间,会把 assistant 切掉留下孤儿回执,
+            // DeepSeek 会以 "tool must be a response to a preceding tool_calls" 永久 400 —— 补刀丢掉组头孤儿
+            while (kept.Count > headCount && string.Equals(kept[headCount].Role, "tool", StringComparison.OrdinalIgnoreCase))
+                kept.RemoveAt(headCount);
             _conversation.Clear();
             _conversation.AddRange(kept);
+        }
+
+        /// <summary>会话历史协议自愈:剔除悬空 tool 回执(前一条 assistant 缺对应 tool_calls),
+        /// 裁掉没收到回执的 tool_calls(整组降级为纯文本)。在收到 DeepSeek 400(tool 配对类)时调用。</summary>
+        private void SanitizeConversation()
+        {
+            var clean = new List<LlmMessage>();
+            for (var i = 0; i < _conversation.Count; i++)
+            {
+                var m = _conversation[i];
+
+                if (m.Role == "tool")
+                {
+                    var prev = clean.Count > 0 ? clean[clean.Count - 1] : null;
+                    var legal = prev != null && prev.Role == "assistant" && prev.ToolCalls != null
+                        && prev.ToolCalls.Any(t => (t["id"]?.ToString() ?? "") == (m.ToolCallId ?? ""));
+                    if (legal) clean.Add(m); // 孤儿回执直接丢弃
+                    continue;
+                }
+
+                if (m.Role == "assistant" && m.ToolCalls != null && m.ToolCalls.Count > 0)
+                {
+                    // 收集紧随的回执,逐 call 配对;没配上的 call 不许进历史(协议要求每个 call 都有回执)
+                    var replies = new List<LlmMessage>();
+                    var j = i + 1;
+                    while (j < _conversation.Count && _conversation[j].Role == "tool")
+                    {
+                        replies.Add(_conversation[j]);
+                        j++;
+                    }
+                    var keptCalls = new Newtonsoft.Json.Linq.JArray();
+                    var keptReplies = new List<LlmMessage>();
+                    foreach (var t in m.ToolCalls)
+                    {
+                        var id = t["id"]?.ToString() ?? "";
+                        var r = replies.FirstOrDefault(x => (x.ToolCallId ?? "") == id);
+                        if (r == null) continue;
+                        keptCalls.Add(t);
+                        keptReplies.Add(r);
+                    }
+                    if (keptCalls.Count == m.ToolCalls.Count)
+                    {
+                        clean.Add(m);
+                        clean.AddRange(replies);
+                    }
+                    else if (keptCalls.Count > 0)
+                    {
+                        clean.Add(new LlmMessage("assistant", m.Content ?? "") { ToolCalls = keptCalls });
+                        clean.AddRange(keptReplies);
+                    }
+                    else
+                    {
+                        var text = (m.Content ?? "").Trim();
+                        if (text.Length > 0) clean.Add(new LlmMessage("assistant", text));
+                        // 全空组(既无文本又无配对回执)整组丢弃
+                    }
+                    i = j - 1;
+                    continue;
+                }
+
+                clean.Add(m);
+            }
+            _conversation.Clear();
+            _conversation.AddRange(clean);
         }
 
         // ===================== 记忆维护(主线程) =====================
