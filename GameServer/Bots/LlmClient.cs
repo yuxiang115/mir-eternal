@@ -44,6 +44,10 @@ namespace GameServer.Bots
         /// <summary>前缀缓存命中/未命中的输入 token(DeepSeek usage.prompt_cache_hit_tokens);非 0 即支持缓存。</summary>
         public int CacheHitTokens;
         public int CacheMissTokens;
+        /// <summary>本次请求真实输入 token 总量(usage.prompt_tokens)——上下文计量的权威值。</summary>
+        public int PromptTokens;
+        /// <summary>本次输出 token(usage.completion_tokens,含思维链)。</summary>
+        public int CompletionTokens;
         /// <summary>模型原始 tool_calls 数组(官方协议要求下一轮原样回传)。</summary>
         public JArray RawToolCalls;
     }
@@ -112,6 +116,9 @@ namespace GameServer.Bots
                 {
                     result.CacheHitTokens = usage["prompt_cache_hit_tokens"]?.Type == JTokenType.Integer ? usage["prompt_cache_hit_tokens"].Value<int>() : 0;
                     result.CacheMissTokens = usage["prompt_cache_miss_tokens"]?.Type == JTokenType.Integer ? usage["prompt_cache_miss_tokens"].Value<int>() : 0;
+                    // 上下文计量的权威值:API 报的真实输入总量(缺失时回退 hit+miss)
+                    result.PromptTokens = usage["prompt_tokens"]?.Type == JTokenType.Integer ? usage["prompt_tokens"].Value<int>() : result.CacheHitTokens + result.CacheMissTokens;
+                    result.CompletionTokens = usage["completion_tokens"]?.Type == JTokenType.Integer ? usage["completion_tokens"].Value<int>() : 0;
                 }
                 return result;
             }

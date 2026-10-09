@@ -527,18 +527,23 @@ namespace GameServer.Bots
 
                     // 缓存命中率观测:命中部分成本约为未命中的1/10,低了就该查前缀稳定性
                     _lastLlmCallAt = DateTime.Now;
-                    var inTotal = result.CacheHitTokens + result.CacheMissTokens;
+                    if (result.PromptTokens > _lastPromptTokens)
+                        _lastPromptTokens = result.PromptTokens; // 上下文占用权威计量(取较大值,含重试轮)
+                    var inTotal = result.PromptTokens > 0 ? result.PromptTokens : result.CacheHitTokens + result.CacheMissTokens;
                     if (inTotal > 0)
                     {
                         var hitPct = result.CacheHitTokens * 100 / inTotal;
+                        var ctxPct = _lastPromptTokens * 100 / Math.Max(1, config.MaxContextTokens);
                         MainProcess.AddSystemLog("[Bot缓存] " + Definition.Name
                             + " input=" + inTotal
                             + " hit=" + result.CacheHitTokens
-                            + " miss=" + result.CacheMissTokens
+                            + " miss=" + (inTotal - result.CacheHitTokens)
                             + " (" + hitPct + "%)"
-                            + (hitPct < 50 ? " ⚠️冷启动" : ""));
+                            + " ctx=" + _lastPromptTokens + "/" + config.MaxContextTokens + " (" + ctxPct + "%)"
+                            + (hitPct < 50 ? " ⚠️冷启动" : "")
+                            + (ctxPct >= 90 ? " 🔥该压缩了" : ""));
                         BotLogger.Log(Definition.Name, "cache",
-                            "in=" + inTotal + " hit=" + result.CacheHitTokens + " miss=" + result.CacheMissTokens + " (" + hitPct + "%)");
+                            "in=" + inTotal + " hit=" + result.CacheHitTokens + " miss=" + (inTotal - result.CacheHitTokens) + " (" + hitPct + "%) ctx=" + _lastPromptTokens);
                     }
 
                     // 空轮(没动作、没被搭话、也没新事件):这轮观察不入历史 ——
@@ -835,11 +840,13 @@ namespace GameServer.Bots
                 ToolReplies.Clear();
         }
 
-        /// <summary>安全阀:仅当 LLM 压缩失效、历史逼近 API 上限时硬裁到 80k tokens 以下,正常永远不触发。
+        /// <summary>安全阀:仅当 LLM 压缩失效、历史逼近 API 上限时硬裁到预算的 40% 以下,正常永远不触发。
         /// (v3.23 遗留的"80轮消息数裁剪"已删:26k tokens 就无声删史、每轮滑动前缀碎缓存、且与 LLM 压缩职责重复)</summary>
         private void TrimHistory()
         {
-            while (_conversation.Count > 1 && EstimateTokens() > 80000)
+            var floor = (int)(BotManager.Config.MaxContextTokens * 0.4);
+            var before = _conversation.Count;
+            while (_conversation.Count > 1 && EstimateTokens() > floor)
             {
                 var drop = Math.Min(50, _conversation.Count - 1);
                 _conversation.RemoveRange(1, drop);
@@ -847,6 +854,8 @@ namespace GameServer.Bots
                 while (_conversation.Count > 1 && string.Equals(_conversation[1].Role, "tool", StringComparison.OrdinalIgnoreCase))
                     _conversation.RemoveAt(1);
             }
+            if (_conversation.Count == before)
+                return; // 空操作不打日志(压缩流程的 finally 兜底每次都会调到这)
             MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 安全阀裁剪到" + _conversation.Count + "条 —— 压缩机制没接住,请查CompressHistoryAsync");
         }
 
@@ -960,31 +969,33 @@ namespace GameServer.Bots
             }
         }
 
-        /// <summary>粗略估算当前对话历史的 token 数(中文≈1.6字/token,宁高勿低)。</summary>
+        /// <summary>粗略估算当前对话历史的 token 数(中文≈1.6字/token,宁高勿低)。
+        /// 仅作重启后首轮(还没有 API 真实回执)的回退计量,权威值是 _lastPromptTokens。</summary>
         private int EstimateTokens()
         {
             var chars = _conversation.Sum(m => m.Content != null ? m.Content.Length : 0);
             return (int)(chars / 1.4);
         }
 
-        /// <summary>
-        /// 短期记忆压缩:超过阈值时把最旧的 60% 轮次交给 LLM 做结构化提取
-        /// (经历摘要 + 值得长期记住的要点),替换原文;要点顺手写入长期记忆。
-        /// </summary>
+        /// <summary>最近一次主调用的真实输入 token 数(usage.prompt_tokens)——上下文占用的权威计量。</summary>
+        private int _lastPromptTokens;
+
         private async Task CompressHistoryAsync()
         {
             var config = BotManager.Config;
             if (_conversation.Count < 8)
                 return;
-            var est = EstimateTokens();
-            if (est >= 150000)
+            // 权威值=API 真实回执;重启后首轮没有回执时退化为字符估算(此时历史还很小,误差无碍)
+            var budget = config.MaxContextTokens;
+            var used = _lastPromptTokens > 0 ? _lastPromptTokens : EstimateTokens();
+            if (used >= budget * 0.97)
             {
-                // 安全阀:压缩线(120k)之上还没压下去 —— 压缩机制失效/连续异常,再不放血就撞 API 200k 上限。
-                // 正常流程永远到不了这里(v3.38 之前的日常 TrimHistory 已删,上下文管理只归 LLM 压缩)
+                // 安全阀:压缩线之上还没压下去 —— 压缩机制失效/连续异常,再不放血就撞 API 上限。
+                // 正常流程永远到不了这里(上下文管理只归 LLM 压缩)
                 TrimHistory();
                 return;
             }
-            if (est < config.CompressThresholdTokens)
+            if (used < budget * config.CompressThresholdRatio)
                 return; // 未到压缩线:不裁任何东西 —— 历史越长前缀缓存命越多,append 本身近乎免费
 
             try
@@ -1036,8 +1047,9 @@ namespace GameServer.Bots
                 _conversation.Add(new LlmMessage("user",
                     "[你的记忆]" + (char)10 + freshMemory + (char)10 + (char)10 +
                     "[你之前的经历(压缩浓缩)]" + (char)10 + summary));
+                _lastPromptTokens = 0; // 上下文已重置,占用以下一轮真实回执重新计量
 
-                MainProcess.AddSystemLog("[Bot压缩] " + Definition.Name + " 完成: 记忆已存盘,上下文重置");
+                MainProcess.AddSystemLog("[Bot压缩] " + Definition.Name + " 完成: 记忆已存盘,上下文重置(压缩前占用 " + used + "/" + budget + ")");
             }
             catch (Exception ex)
             {
@@ -1045,7 +1057,7 @@ namespace GameServer.Bots
             }
             finally
             {
-                TrimHistory();
+                TrimHistory(); // 静默兜底:压缩后历史很小,阀门条件不满足时是空操作
             }
         }
 

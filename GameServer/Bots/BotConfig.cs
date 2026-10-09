@@ -14,13 +14,13 @@ namespace GameServer.Bots
         public bool Enabled = false;
         public BotLlmConfig Llm = new BotLlmConfig();
         public int ThinkIntervalMs = 5000;
-        /// <summary>硬截断兜底轮数;正常运行永远到不了(72k 结构化压缩先触发),只为极端情况兜底。</summary>
-        public int MaxHistoryTurns = 80;
         public int MaxChatMemory = 30;
-        /// <summary>短期记忆(session)总预算,token 数;对话历史接近阈值时自动结构化压缩。</summary>
+        /// <summary>上下文预算(token):按 API 返回的真实 usage.prompt_tokens 计量。
+        /// 模型窗口是 1M,200k 是成本/质量预算选择,想放大只改这里。</summary>
         public int MaxContextTokens = 200000;
-        /// <summary>触发压缩的阈值(占 MaxContextTokens 的比例乘算)。</summary>
-        public int CompressThresholdTokens = 120000;
+        /// <summary>压缩触发比例(业界惯例:Claude Code ~83.5% auto-compact)。
+        /// 真实输入 tokens ≥ 90%×预算 → LLM主导压缩(存记忆→摘要→重置);≥97% 为安全阀。</summary>
+        public double CompressThresholdRatio = 0.90;
         /// <summary>反思间隔(分钟):空闲且新经历攒够了,后台提炼一次长期洞察。</summary>
         public int ReflectionIntervalMinutes = 20;
         public BotReflexConfig Reflex = new BotReflexConfig();
