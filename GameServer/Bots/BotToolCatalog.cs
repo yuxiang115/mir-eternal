@@ -408,6 +408,8 @@ namespace GameServer.Bots
             if (!(target is MonsterObject))
                 return "只能攻击怪物";
 
+            if (!brain.IsSafeTarget(brain.Player, target))
+                return "打不过 " + target.ObjectName + "(等级/血量差距太大)";
             brain.CombatTargetId = targetId;
             return "正在攻击 " + target.ObjectName;
         }

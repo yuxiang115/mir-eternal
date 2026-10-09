@@ -117,10 +117,53 @@ namespace GameServer.Bots
             //   [0] system = 公共常识头(四个号字节一致,互相命中)+ 个人人格(静态)
             //   [1] user   = 记忆(低频重写,只损失其后历史的缓存)
             //   [2..]      = 对话历史(append-only,永不改动 → 前缀稳定)
+            ReconcileMemory(player);
             _conversation.Add(new LlmMessage("system", BuildSystemPrompt()));
             // 纯 append 架构:无任何特殊位置消息
             // [0]=system(永不变) [1..]=纯对话流(只 append,永不改)
             // 记忆/地图走正常对话消息(append),压缩时整体 reset 重来
+        }
+
+        /// <summary>
+        /// P0-1 启动时记忆校准:服务器数据库可能被重置(角色回1级),但 BotMemory 还留着旧等级。
+        /// 等级倒退 = 世界重置 → 清除过时的等级类里程碑,避免 LLM 每轮解释"为什么降级了"。
+        /// 保留:人际关系、知识、反思(这些跨世界有效)。
+        /// </summary>
+        private void ReconcileMemory(PlayerObject player)
+        {
+            // 从里程碑中提取最高等级记录
+            var maxRememberedLevel = 0;
+            foreach (var m in Memory.Milestones)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(m.Text, @"(\d+)级");
+                if (match.Success)
+                {
+                    var lvl = int.Parse(match.Groups[1].Value);
+                    if (lvl > maxRememberedLevel) maxRememberedLevel = lvl;
+                }
+            }
+
+            if (maxRememberedLevel > player.CurrentLevel + 1)
+            {
+                // 等级倒退 = 数据库重置,清除等级类里程碑(保留人际/知识/反思)
+                var toKeep = new List<MemoryEntry>();
+                foreach (var m in Memory.Milestones)
+                {
+                    var isLevelMilestone = System.Text.RegularExpressions.Regex.IsMatch(m.Text, @"升到|\d+级");
+                    if (!isLevelMilestone)
+                        toKeep.Add(m);
+                }
+                Memory.Milestones = toKeep;
+
+                // 清除等级相关的近况
+                Memory.SelfNote = "";
+                Memory.Progress = "";
+
+                // 加一条校准记录
+                Memory.RecordEpisode("新的一代:等级回到" + player.CurrentLevel + "级(之前到过" + maxRememberedLevel + "级),从头开始", 5);
+                Memory.Dirty = true;
+                MainProcess.AddSystemLog("[Bot校准] " + Definition.Name + " 检测到等级倒退(" + maxRememberedLevel + "→" + player.CurrentLevel + "),已清除过时里程碑");
+            }
         }
 
         /// <summary>已废弃:不做任何消息重写。</summary>
@@ -989,6 +1032,7 @@ namespace GameServer.Bots
                         }
                     }
                 }
+                ReflexGrindTravel(player); // P0-3: 挂机挪窝独立步进
                 ReflexMove(player);
                 ReflexLoot(player);
                 ReflexIdleWander(player);
@@ -1196,7 +1240,7 @@ namespace GameServer.Bots
             if (leaderBrain != null && leaderBrain.CombatTargetId != 0)
             {
                 MapObject t;
-                if (MapGatewayProcess.Objects.TryGetValue(leaderBrain.CombatTargetId, out t) && !t.Died && player.GetDistance(t) <= 12)
+                if (MapGatewayProcess.Objects.TryGetValue(leaderBrain.CombatTargetId, out t) && !t.Died && player.GetDistance(t) <= 12 && IsSafeTarget(player, t))
                 {
                     CombatTargetId = t.ObjectId;
                     return false; // 下一 tick ReflexCombat 接手；本 tick 先往怪身上走
@@ -1230,10 +1274,24 @@ namespace GameServer.Bots
                     continue;
                 if (monster.GetRelationship(player) != GameObjectRelationship.Hostility)
                     continue;
+                if (!IsSafeTarget(player, monster))
+                    continue; // 清路也只打打得过的
                 CombatTargetId = monster.ObjectId;
                 return true;
             }
             return false;
+        }
+
+        /// <summary>P0-2 统一战斗目标安全检查:所有设 CombatTargetId 的入口必须先调这个。</summary>
+        public bool IsSafeTarget(PlayerObject player, MapObject target)
+        {
+            if (target == null || target.Died || !(target is MonsterObject)) return false;
+            var monster = (MonsterObject)target;
+            if (monster.CurrentLevel > player.CurrentLevel + 10) return false;
+            var mobMaxHp = monster[GameObjectStats.MaxHP];
+            var myMaxHp = player[GameObjectStats.MaxHP];
+            if (mobMaxHp > 0 && myMaxHp > 0 && mobMaxHp > myMaxHp * 5) return false;
+            return true;
         }
 
         private bool ReflexCombat(PlayerObject player)
@@ -1310,18 +1368,18 @@ namespace GameServer.Bots
 
             if (best == null)
             {
-                // 挂机中但视野内没怪:先站几秒等刷新,久了就自己挪窝去最近的刷怪点
+                // P0-3 意图锁定:AutoGrind 模式下不动 LLM 的 MoveTarget — 挂机挪窝用独立目标
+                // 避免 ReflexGrind设目标→ReflexMove消费→Grind又设→循环
                 if (_noMonsterSince == default(DateTime))
                     _noMonsterSince = MainProcess.CurrentTime;
-                else if (MainProcess.CurrentTime > _noMonsterSince.AddSeconds(8.0) && MoveTarget == null)
+                else if (MainProcess.CurrentTime > _noMonsterSince.AddSeconds(8.0) && _grindTarget == null && MoveTarget == null)
                 {
                     _noMonsterSince = MainProcess.CurrentTime;
                     if (MoveToNearestSpawn(player))
-                        return true; // 正在挪窝
+                        return true; // 挪窝目标已设(_grindTarget), ReflexGrind 自己管理
                     _grindMoves++;
                     if (_grindMoves >= 3)
                     {
-                        // 挪了几次都没怪(或挪不动):别傻站,喊 LLM 来定夺(换图/查攻略/组队走)
                         _grindMoves = 0;
                         lock (ToolResults)
                             ToolResults.Add("这附近彻底没怪了,挪窝也没用 —— 查攻略看该去哪(check_guide)、看出口换图(goto_map)、或者跟人组队走,别在这干站着");
@@ -1333,11 +1391,14 @@ namespace GameServer.Bots
 
             _noMonsterSince = default(DateTime);
             _grindMoves = 0;
+            _grindTarget = null; // 有怪打了,取消挪窝
             CombatTargetId = best.ObjectId;
             return true;
         }
 
         private DateTime _noMonsterSince;
+        private Point? _grindTarget;
+        private LinkedList<Point> _grindPathSteps;
         private int _grindMoves;
 
         /// <summary>走向本图最近的刷怪点(离当前位置超过25格才算"挪窝"),走路时清路逻辑照常接管拦路的怪。</summary>
@@ -1380,7 +1441,8 @@ namespace GameServer.Bots
             if (!player.CurrentMap.CanPass(target))
                 target = nearest.FromCoords;
             RebuildPath(target);
-            MoveTarget = target;
+            _grindTarget = target; // P0-3: 挂机挪窝走独立目标,不碰 MoveTarget
+            _grindPathSteps = _pathSteps;
             MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 附近没怪了,挪窝去 " + nearest.RegionName + "(" + target.X + "," + target.Y + ")");
             BotLogger.Log(Definition.Name, "event", "挪窝 → " + nearest.RegionName + "(" + target.X + "," + target.Y + ")");
             return true;
@@ -1476,6 +1538,37 @@ namespace GameServer.Bots
             catch (Exception ex)
             {
                 MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 寻路失败(退化为直走): " + ex.Message);
+            }
+        }
+
+        /// <summary>P0-3: 挂机挪窝的独立步进(不经过 ReflexMove,避免意图竞争)。</summary>
+        private void ReflexGrindTravel(PlayerObject player)
+        {
+            if (_grindTarget == null) return;
+            var target = _grindTarget.Value;
+            var distance = player.GetDistance(target);
+            if (distance <= 0)
+            {
+                _grindTarget = null;
+                _grindPathSteps = null;
+                return;
+            }
+            // 沿 A* 路径走(复用 StepToward 的路径跟随逻辑)
+            if (_grindPathSteps != null && _grindPathSteps.Count > 0)
+            {
+                var next = _grindPathSteps.First.Value;
+                if (player.CurrentPosition == next)
+                {
+                    _grindPathSteps.RemoveFirst();
+                }
+                else
+                {
+                    StepToward(player, next);
+                }
+            }
+            else
+            {
+                StepToward(player, target);
             }
         }
 
