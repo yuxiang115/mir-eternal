@@ -840,7 +840,10 @@ namespace GameServer.Bots
             // 纯 append:只保留 [0]=system,其余是对话(纯截尾,无特殊位置)
             var headCount = 1;
             var maxMessages = headCount + BotManager.Config.MaxHistoryTurns * 2;
-            if (_conversation.Count <= maxMessages)
+            // 裁剪滞回:每裁一次=前缀整体平移=当轮全量 cache miss(实测:超过161条后每轮追加必裁,
+            // 30分钟刷出300+次26k全miss的"冷启动")。攒够一批再裁,两次裁剪之间留出十几轮纯append高命中期
+            const int slack = 40;
+            if (_conversation.Count <= maxMessages + slack)
                 return;
 
             var kept = _conversation.Take(headCount).ToList();
