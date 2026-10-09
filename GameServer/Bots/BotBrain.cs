@@ -181,7 +181,28 @@ namespace GameServer.Bots
             }
             sb.Append(RaceStyle(raceName));
             sb.Append('\n');
+            sb.Append(LevelStage(level));
+            sb.Append('\n');
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// 等级阶段感:言行举止必须配得上自己的等级 —— 1级就是穷新人,没见过世面没东西可吹;
+        /// 40级才有资格指点江山。防止低级号满嘴跑火车。
+        /// </summary>
+        private static string LevelStage(int level)
+        {
+            if (level <= 5)
+                return "【你的水平】你是刚入坑几天的萌新:穷得叮当响、装备稀烂、技能就一个,打只羊都费劲。"
+                    + "没见过的怪、没去过的图、没用过的装备,老实承认不知道;开口闭口'我当年''我有个朋友爆了'这种吹牛话不许说 —— "
+                    + "你就是个新人,问东问西、被人带、捡了瓶药都开心才对。吹嘘自己有什么之前必须 check_inventory,没有的不许说。";
+            if (level <= 15)
+                return "【你的水平】你是个小号:出了新手村没多远,装备寒酸,钱不多,好东西只在别人身上见过。聊装备聊行情多听少吹,不懂就问。";
+            if (level <= 25)
+                return "【你的水平】你算个中手:有了点家底和见识,能带带更新的新人,但离大佬还远,别口气太大。";
+            if (level <= 35)
+                return "【你的水平】你是老玩家了:见多识广,能指点新人、评论行情,但吹牛要有限度,说有的必须真有。";
+            return "【你的水平】你是元老级玩家:全服有名有姓,见过大场面(沙巴克/沃玛/祖玛),指点江山没人质疑你 —— 但越是大佬越不用吹。";
         }
 
         private static string RaceStyle(string race)
