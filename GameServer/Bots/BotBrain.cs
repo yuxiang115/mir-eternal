@@ -781,6 +781,11 @@ namespace GameServer.Bots
             else
                 sb.Append("[今天还没计划] 想好今天干什么就调 set_plan 登记一两句(比如'上午冲8级,晚上找人组队')\n");
 
+            // 家底见底:没钱没药是最高优先级的生存决策输入(实测:金币0的号反复死17次也没自救)
+            if (s.Gold < 100 && s.HpPotions <= 3)
+                sb.Append("[家底见底] 金币").Append(s.Gold).Append(" 红药").Append(s.HpPotions)
+                  .Append("瓶 —— 先打低级稳怪攒钱、捡掉落卖钱,别碰硬怪;实在撑不住向熟人开口借(give_gold能转账,记着还)\n");
+
             // 成本护栏:观察超过800字符截断(LLM不需要全部细节,足够决策即可)
             if (sb.Length > 800)
             {
@@ -2092,26 +2097,41 @@ namespace GameServer.Bots
 
         public static ushort GetAttackSkillId(PlayerObject player)
         {
-            // 各职业初始普攻铭文 -> 真实技能Id
-            var starterInscription = GetRaceStarterInscription(player.CharRole);
-            if (starterInscription != 0
-                && InscriptionSkill.DataSheet.TryGetValue(starterInscription, out var inscription)
-                && player.MainSkills表.ContainsKey(inscription.SkillId))
+            // 已学主动攻击技能里选编号最高的(新学的更高编号:涨熟练+弓手解锁射程)。
+            // 原版 starter 分支无条件先返回普攻,学了火球术/中平枪术也永远贴脸平A
+            // (实测5271次施放100%普攻,红缨都学会中平枪术了还在出龙枪普攻)。
+            // 辅助技能(治疗/召唤/隐身类)不能当攻击放 —— 治愈术丢怪身上=给怪加血,按名字排除。
+            ushort best = 0;
+            foreach (var kv in player.MainSkills表)
             {
-                return inscription.SkillId;
+                var data = kv.Value;
+                if (data == null) continue;
+                // 注意:不能用 data.铭文模板 —— 它按 SkillId*100+Id*10+Level 算键,和 DataSheet 实际键
+                // (SkillId*10+Id,GetSkillName 同款)对不上会抛 KeyNotFound,整个循环被吞成永远普攻
+                Templates.InscriptionSkill ins;
+                if (!Templates.InscriptionSkill.DataSheet.TryGetValue((ushort)(data.SkillId.V * 10), out ins) || ins == null)
+                    continue;
+                if (ins.PassiveSkill) continue;
+                var name = ins.SkillName ?? "";
+                if (name.IndexOf("治") >= 0 || name.IndexOf("愈") >= 0 || name.IndexOf("疗") >= 0
+                    || name.IndexOf("召唤") >= 0 || name.IndexOf("隐身") >= 0 || name.IndexOf("防") >= 0 || name.IndexOf("护") >= 0)
+                    continue;
+                if (best == 0 || kv.Key > best)
+                    best = kv.Key;
             }
 
-            // 没有职业初始铭文时:优先选已学的"高级"技能(编号更大的通常是主动技能),
-            // 学会基础射击(2041)后弓手就该用它(射程8),而不是继续贴脸普攻(2040,射程1)
-            ushort best = 0;
-            foreach (var key in player.MainSkills表.Keys)
-            {
-                var ins = player.MainSkills表[key];
-                if (ins == null) continue;
-                if (best == 0 || key > best)
-                    best = key;
-            }
-            return best;
+            var starterInscription = GetRaceStarterInscription(player.CharRole);
+            ushort starter = 0;
+            if (starterInscription != 0 && InscriptionSkill.DataSheet.TryGetValue(starterInscription, out var inscription))
+                starter = inscription.SkillId;
+
+            // 技能吃蓝:没蓝时退回普攻,别站在怪面前空挥(施放失败服务端只忽略)
+            var maxMp = player[GameObjectStats.MaxMP];
+            if (best != 0 && maxMp > 0 && player.CurrentMP * 100 / maxMp < 20)
+                return starter != 0 ? starter : best;
+            if (best != 0)
+                return best;
+            return starter;
         }
 
         private static ushort GetRaceStarterInscription(GameObjectRace race)

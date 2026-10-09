@@ -73,6 +73,7 @@ namespace GameServer
             Running = true;
             MainForm.ServerStartedCallback();
             var sw = new Stopwatch();
+            var nextAutoSave = DateTime.Now.AddMinutes(5.0);
 
             while (true)
             {
@@ -93,6 +94,17 @@ namespace GameServer
                     NetworkServiceGateway.Process();
                     MapGatewayProcess.Process();
                     ProcessReloadTasks();
+
+                    // 周期自动存档:强杀进程不再回档(实测一天7次重启把bot等级金币滚回N次)。
+                    // 存档与"保存"按钮同一入口(SaveData),主循环线程执行与崩溃处理器同线程,安全。
+                    if (CurrentTime > nextAutoSave)
+                    {
+                        var saveWatch = System.Diagnostics.Stopwatch.StartNew();
+                        GameDataGateway.SaveData();
+                        saveWatch.Stop();
+                        MainForm.AddSystemLog("[自动存档] 完成,耗时" + saveWatch.ElapsedMilliseconds + "ms");
+                        nextAutoSave = CurrentTime.AddMinutes(5.0);
+                    }
                     sw.Stop();
 
                     if (sw.ElapsedMilliseconds <= 2)

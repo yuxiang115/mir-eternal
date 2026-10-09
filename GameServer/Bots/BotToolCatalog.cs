@@ -591,26 +591,45 @@ namespace GameServer.Bots
         {
             bookName = (bookName ?? "").Trim();
             var player = brain.Player;
+            if (bookName.Length == 0)
+                return "要写书名(如 learn_skill 火球术);不知道背包有啥书先 check_inventory";
+
+            var foundButLearned = false;
             foreach (var item in player.Backpack.Values)
             {
                 if (item == null || item.物品模板 == null || item.物品类型 != ItemType.技能书籍)
                     continue;
                 var template = item.物品模板.Name ?? "";
-                if (bookName.Length > 0 && !template.Contains(bookName))
+                if (!template.Contains(bookName))
                     continue;
                 if (player.MainSkills表.ContainsKey(item.SkillId))
+                {
+                    foundButLearned = true;
                     continue; // 已学过,找下一本
+                }
+
+                // 学不会给真实原因,免得反复盲试(实测火球术盲试9次/群体治愈术7次全是"没有或已学过")
+                Templates.InscriptionSkill ins;
+                Templates.InscriptionSkill.DataSheet.TryGetValue((ushort)(item.SkillId * 10), out ins);
+                if (ins != null && ins.Race != GameObjectRace.通用 && ins.Race != player.CharRole)
+                    return "《" + template + "》是" + ins.Race + "的书,你不是这个职业,读了白读(留着送人/卖)";
+                if (ins != null && ins.MinPlayerLevel != null && ins.MinPlayerLevel.Length > 0 && ins.MinPlayerLevel[0] > player.CurrentLevel)
+                    return "《" + template + "》要 " + ins.MinPlayerLevel[0] + " 级才能学,你现在 " + player.CurrentLevel + " 级 —— 书收好,先练级";
+
                 var learned = player.LearnSkill(item.SkillId);
                 if (learned)
                 {
                     player.ConsumeBackpackItem(1, item);
                     BotLogger.Log(brain.Definition.Name, "act", "learn_skill: " + template);
-                    return "读了 " + template + ",真的学会了!(check_skills 确认,放技能多用涨熟练)";
+                    brain.Memory.Remember("知识: 已学会" + template + "(打怪会自动用,多用涨熟练)");
+                    return "读了 " + template + ",真的学会了!以后打怪自动用它";
                 }
                 BotLogger.Log(brain.Definition.Name, "act", "learn_skill失败: " + template);
-                return "读 " + template + " 没学会(可能已经学过,或等级/条件不满足)";
+                return "读《" + template + "》没学会(条件不满足,先 check_guide 查这本书的要求)";
             }
-            return bookName.Length > 0 ? "背包里没有「" + bookName + "」或已学过" : "背包里没有可读的技能书(商店买或打怪爆)";
+            if (foundButLearned)
+                return "《" + bookName + "》你已经学过了,别再读(书可以留着送人)";
+            return "背包里没有《" + bookName + "》 —— 商店能买就 buy_item(看金币够不够),买不到就打怪爆或者找人收";
         }
 
         private static string BuyItem(BotBrain brain, string name, int count)

@@ -29,6 +29,10 @@ namespace GameServer.Bots
         public int Y;
         public bool Dead;
         public int Gold;
+        /// <summary>红药存量(贫困提示用)。</summary>
+        public int HpPotions;
+        /// <summary>蓝药存量。</summary>
+        public int MpPotions;
         public string Mood;
 
         public string FollowTarget;
@@ -126,6 +130,14 @@ namespace GameServer.Bots
                 Mood = brain.Mood,
                 AutoGrinding = brain.AutoGrind,
             };
+
+            // 药量统计(贫困提示用):红/蓝药按反射层同一套ID表数背包存量(可堆叠物品的数量在 当前持久)
+            foreach (var item in player.Backpack.Values)
+            {
+                if (item == null || item.物品模板 == null) continue;
+                if (BotManager.Config.Reflex.HpPotionIds.Contains(item.物品模板.Id)) snapshot.HpPotions += Math.Max(1, item.当前持久.V);
+                if (BotManager.Config.Reflex.MpPotionIds.Contains(item.物品模板.Id)) snapshot.MpPotions += Math.Max(1, item.当前持久.V);
+            }
 
             // ---- 视野内玩家 ----
             var playerIds = new HashSet<int>();
