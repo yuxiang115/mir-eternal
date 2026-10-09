@@ -315,8 +315,7 @@ namespace GameServer.Bots
             writer.Write(NearbyChannel);
             writer.Write((byte)0);
             writer.Write(Encoding.UTF8.GetBytes(text + "\0"));
-            brain.Player.玩家发送广播(payload.ToArray());
-            MainProcess.AddChatLog("[附近][" + brain.Definition.Name + "]: ", Encoding.UTF8.GetBytes(text));
+            brain.Player.玩家发送广播(payload.ToArray()); // 服务器路径自带 [General] 落盘,别再记一遍
             BotLogger.Log(brain.Definition.Name, "say", "[附近] " + text);
             return "已喊话";
         }

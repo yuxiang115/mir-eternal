@@ -425,27 +425,52 @@ namespace GameServer.Bots
 
             brain.Memory.StartupKitGranted = true;
 
-            // 合规清理:移掉不该在身上的装备(等级/职业/性别不符)。
-            // 不按价格清 —— 新号自带的职业铭文装(骨玉/银蛇级)就是这服的新手起步装,别误清。
+            // 强制布衣木剑开局:新号自带的职业铭文装(骨玉级)全部没收,
+            // 换成全服最便宜的白板武器+衣服 —— 真正的从零成长,装备全靠打。
+            for (var slot = 0; slot <= 1; slot++)
+            {
+                EquipmentData worn;
+                if (player.Equipment.TryGetValue((byte)slot, out worn))
+                {
+                    player.Equipment.Remove((byte)slot);
+                    worn.Delete();
+                }
+            }
             foreach (var item in player.Backpack.Values.ToList())
             {
                 var equip = item?.物品模板 as EquipmentItem;
-                if (equip == null)
+                if (equip == null || (equip.Type != ItemType.武器 && equip.Type != ItemType.衣服))
                     continue;
-                var inappropriate = equip.NeedLevel > player.CurrentLevel
-                    || equip.NeedGender != GameObjectGender.不限 && equip.NeedGender != player.CharGender
-                    || equip.NeedRace != GameObjectRace.通用 && equip.NeedRace != player.CharRole;
-                if (inappropriate)
+                player.Backpack.Remove(item.物品位置.V);
+                item.Delete();
+            }
+            MainProcess.AddSystemLog("[Bot] " + definition.Name + " 没收自带装备: 穿着" + player.Equipment.Count + "件 背包" + player.Backpack.Count + "格");
+
+            foreach (var slot in new[] { ItemType.武器, ItemType.衣服 })
+            {
+                var starter = GameItems.DataSheet.Values
+                    .OfType<EquipmentItem>()
+                    .Where(e => e.Type == slot
+                                && e.NeedLevel <= 3
+                                && (e.NeedRace == GameObjectRace.通用 || e.NeedRace == player.CharRole)
+                                && (e.NeedGender == GameObjectGender.不限 || e.NeedGender == player.CharGender)
+                                && e.SalePrice > 0)
+                    .OrderBy(e => e.SalePrice)
+                    .FirstOrDefault();
+                if (starter == null)
                 {
-                    player.Backpack.Remove(item.物品位置.V);
-                    item.Delete();
-                    MainProcess.AddSystemLog("[Bot] " + definition.Name + " 清退不合规装备: " + equip.Name);
+                    MainProcess.AddSystemLog("[Bot] " + definition.Name + " 没找到便宜的" + slot + "(筛选无结果)");
+                    continue;
                 }
+
+                byte position;
+                if (!player.CharacterData.TryGetFreeSpaceAtInventory(out position))
+                    break;
+                player.GainItem(starter, position, 1);
+                MainProcess.AddSystemLog("[Bot] " + definition.Name + " 布衣木剑开局,领取" + slot + ": " + starter.Name);
             }
 
-            // 装备不发:这服新号自带职业铭文装(就是新手起步装),好装备自己打、钱自己挣。
-            // StartingGold 封顶 5000(买几组药的起步钱),财富靠挣。
-
+            // 起步资金封顶 5000(买几组药),财富靠挣;装备从白板开始,好货自己打。
             if (definition.StartingGold > 0)
             {
                 // 成长性:起步资金就是买几组药的钱,封顶5000,财富靠挣
