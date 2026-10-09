@@ -396,24 +396,25 @@ namespace GameServer.Bots
             var hasNews = snapshot.Chat.Count > 0 || snapshot.Events.Count > 0 || snapshot.ToolResults.Count > 0;
             var busy = AutoGrind || FollowTargetId != 0 || CombatTargetId != 0 || MoveTarget != null || snapshot.Dead;
             var someoneNearby = snapshot.Players.Count > 0;
+            // 间隔全部压在 DeepSeek 缓存 TTL(~120s)以内:
+            // cache hit 时 input ≈ 免费,多想几轮反而比长间隔+冷启动便宜(25k miss vs 500 miss)
             if (!hasNews && !busy && !someoneNearby)
             {
-                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(180 + MainProcess.RandomNumber.Next(240));
+                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(60 + MainProcess.RandomNumber.Next(60));
                 return;
             }
 
-            // 意图执行中(挂机/跟随/战斗/移动)且没有新鲜事:身体自己在干,不用脑子 ——
-            // 超长周期巡检(2~5分钟),中途任何事件(聊天/掉血/承诺到点)都会立即唤醒
+            // 意图执行中:身体在跑,脑子定期巡逻(60~90s,事件会立即唤醒)
             if (!hasNews && busy)
             {
-                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(120 + MainProcess.RandomNumber.Next(180));
+                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(45 + MainProcess.RandomNumber.Next(45));
                 return;
             }
 
-            // 身边有人但没新鲜事:低频社交直觉(60~150秒,70%直接跳过)
+            // 身边有人:保持社交直觉(30~60s)
             if (!hasNews && !busy)
             {
-                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(60 + MainProcess.RandomNumber.Next(90));
+                _nextThinkTime = MainProcess.CurrentTime.AddSeconds(30 + MainProcess.RandomNumber.Next(30));
                 return;
             }
 
@@ -453,12 +454,6 @@ namespace GameServer.Bots
                 _conversation.Add(new LlmMessage("user", observation));
                 try
                 {
-                    // 心跳保温:距上次调用>90秒时先发一个1-token请求刷新缓存,
-                    // 让正式请求能命中(成本≈1个output token,换来25k input按缓存价计费)
-                    var sinceLastCall = DateTime.Now - _lastLlmCallAt;
-                    if (sinceLastCall.TotalSeconds > 90 && _conversation.Count > 2)
-                        await SendHeartbeat(llm);
-
                     var result = await LlmClient.ChatAsync(llm, _conversation, BotToolCatalog.Definitions, effort);
                     _llmFailures = 0;
 
@@ -588,7 +583,7 @@ namespace GameServer.Bots
                 // 有新鲜事(聊天/事件)时反应快一点,平常按配置节奏,加随机抖动避免机械规律
                 var interval = BotManager.Config.ThinkIntervalMs;
                 if (!_recentActivity)
-                    interval *= 12; // 没新鲜事:1分钟+抖动(成本控制)
+                    interval *= 6; // 没新鲜事:30秒+抖动(在TTL内,cache hit免费)
                 var jitter = interval * (0.7 + MainProcess.RandomNumber.NextDouble() * 0.6);
                 _nextThinkTime = MainProcess.CurrentTime.AddMilliseconds(jitter);
             }
@@ -1180,41 +1175,6 @@ namespace GameServer.Bots
                 RebuildPath(fleeTo);
                 MoveTarget = fleeTo;
                 BotLogger.Log(Definition.Name, "event", "濒死逃跑!(" + player.CurrentHP + "/" + maxHp + ") → (" + fleeTo.X + "," + fleeTo.Y + ")");
-            }
-        }
-
-        /// <summary>
-        /// 心跳保温:用当前对话前缀发一个 max_tokens=1 的请求,刷新 DeepSeek 缓存的 LRU 计数器。
-        /// 成本 = 1 个 output token + input 按缓存价(上次调用的miss已写入缓存,这次大概率hit)。
-        /// 不加这个,3-7分钟空闲后正式请求要全量 miss(25k tokens 全价)。
-        /// </summary>
-        private async Task SendHeartbeat(BotLlmConfig llm)
-        {
-            try
-            {
-                var heartbeatMessages = new List<LlmMessage>
-                {
-                    _conversation[0], // system(前缀主体)
-                    _conversation[_conversation.Count - 1], // 最后一轮(保证前缀一致)
-                };
-                var hbConfig = new BotLlmConfig
-                {
-                    BaseUrl = llm.BaseUrl,
-                    ApiKey = llm.ApiKey,
-                    Model = llm.Model,
-                    Temperature = llm.Temperature,
-                    MaxTokens = 1, // 只要1个token
-                    TimeoutSeconds = 15,
-                    ExtraBody = null, // 不带 thinking(更便宜)
-                };
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                await LlmClient.ChatAsync(hbConfig, heartbeatMessages, null);
-                _lastLlmCallAt = DateTime.Now;
-                BotLogger.Log(Definition.Name, "cache", "心跳保温 " + sw.ElapsedMilliseconds + "ms");
-            }
-            catch
-            {
-                // 心跳失败无所谓,正式请求照样发
             }
         }
 
