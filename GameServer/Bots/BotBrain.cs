@@ -164,7 +164,7 @@ namespace GameServer.Bots
             "6. 记住值得记的事(remember 工具,重启也不忘):认识的人用'关于玩家名: 印象';人生大事用'里程碑: ...';日常经历直接记;**游戏里摸出来的门道(什么怪多少血掉什么、哪里有什么、什么东西卖多少钱)用'知识: ...'记** —— 这是你的攻略本,越玩越厚,别把踩过的坑忘了。系统也会自动记你的升级/死亡/装备。\n" +
             "7. 练级打怪前先看药够不够,不够就 buy_item 买(钱不够就先打钱多的怪或卖货);红蓝药喝完会提醒你,别硬撑。\n" +
             "8. 装备自己拿主意:对比背包和身上的(攻/防/需求),更好的直接 equip_item 穿上;打完怪地上的东西 pickup。**卖东西/收东西/夸口之前必须 check_inventory 看一眼 —— 没有的货不许喊,没钱不许喊收,别吹牛。**\n" +
-            "8. 血低系统自动喝药,死了会自动复活,别一惊一乍。\n" +
+            "8. **死亡是你的策略失误**:死了会停掉一切,让你想想为什么死(怪太强?等级不够?装备差?没药?)。想清楚了调 revive 复活,换个打法 — 别在同一个地方死第二次。血低自动喝药,但别指望系统救你。\n" +
             "9. **答应别人将来的事(几点、和谁、干什么)必须调 make_plan 登记** —— 到点系统会提醒你,重启也不忘;办完调 plan_done 销掉。观察里 [待办] 是你惦记的事,[⏰该兑现了] 就是现在,立刻主动去找人、密聊、出发,别干等着。\n" +
             "10. 组队别光嘴上说:调 team_invite 真发邀请。交易用 give_gold 转账或 drop_item 丢地上让对方捡(传奇规矩)。全服收货卖货用 shout(一次1000金币,值不值自己掂量)。打怪想放特定技能(群攻/毒/治疗)先 check_skills 再 use_skill。\n" +
             "11. **技能是练出来的**:打怪掉/商店买的技能书用 learn_skill 读了学,学了要多放(use_skill,熟练度越用越高);道士的召唤技能学完放出来就有宝宝帮你打;check_skills 随时看你都会啥。别一辈子只会普攻。\n" +
@@ -1033,12 +1033,22 @@ namespace GameServer.Bots
                 if (_diedSince == default(DateTime))
                 {
                     _diedSince = MainProcess.CurrentTime;
+                    // 死亡 = 紧急事件:停掉所有自动行为,立刻唤醒 LLM 反思
+                    // 不静默复活继续送死 — 让 agent 自己想清楚为什么死、下次怎么避免
+                    AutoGrind = false;
+                    CombatTargetId = 0;
+                    FollowTargetId = 0;
+                    MoveTarget = null;
                     _nextThinkTime = MainProcess.CurrentTime;
+                    _recentActivity = true; // 视为紧急,跳过长间隔
+                    BotLogger.Log(Definition.Name, "event", "死亡!停机反思中...");
                 }
-                else if (MainProcess.CurrentTime > _diedSince.AddSeconds(6.0))
+                else if (MainProcess.CurrentTime > _diedSince.AddSeconds(30.0))
                 {
+                    // 30秒超时兜底(LLM没回/失败):复活但不开挂机,让 agent 重新决策
                     player.玩家请求复活();
                     _diedSince = default(DateTime);
+                    BotLogger.Log(Definition.Name, "event", "死亡超时,兜底复活(不开挂机)");
                 }
             }
             else

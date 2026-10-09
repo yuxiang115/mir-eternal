@@ -95,6 +95,7 @@ namespace GameServer.Bots
                 Tool("use_potion", "立刻喝一瓶药。",
                     Param("kind", "string", "hp=生命药,mp=魔法药", required: false)),
                 Tool("stop_follow", "停止跟随。"),
+                Tool("revive", "复活(死了才能用)。想清楚策略再复活:如果刚才死是因为怪太强,换个地方再开打。"),
                 Tool("stop", "取消所有当前意图(跟随/攻击/移动),原地待命。"),
             };
         }
@@ -288,6 +289,12 @@ namespace GameServer.Bots
                     case "stop_follow":
                         brain.FollowTargetId = 0;
                         return "已停止跟随";
+                    case "revive":
+                        if (!brain.Player.Died)
+                            return "你还活着";
+                        brain.Player.玩家请求复活();
+                        BotLogger.Log(brain.Definition.Name, "act", "revive(自主复活)");
+                        return "已复活";
                     case "stop":
                         brain.FollowTargetId = 0;
                         brain.CombatTargetId = 0;

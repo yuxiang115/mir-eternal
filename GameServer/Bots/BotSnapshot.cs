@@ -270,7 +270,7 @@ namespace GameServer.Bots
 
             if (player.Died && !brain.WasDead)
             {
-                snapshot.Events.Add("死了");
+                snapshot.Events.Add("你死了!在(" + player.CurrentPosition.X + "," + player.CurrentPosition.Y + ") — 想想是什么杀了你、为什么打不过、下次怎么避免(换怪/换地点/组队/买装备/升等级)");
                 brain.Memory.RecordEpisode("被怪打死了", 3);
                 brain.MemoryDirty = true;
                 BotLogger.Log(brain.Definition.Name, "event", "死亡 @" + player.CurrentPosition.X + "," + player.CurrentPosition.Y);
