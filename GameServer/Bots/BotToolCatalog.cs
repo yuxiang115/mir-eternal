@@ -187,13 +187,18 @@ namespace GameServer.Bots
                             : "没找到这条约定(可能已销过)";
                     }
                     case "grind_nearby":
-                        brain.AutoGrind = args["start"] == null || args["start"].Value<bool>();
+                    {
+                        var wantStart = args["start"] == null || args["start"].Value<bool>();
+                        if (wantStart && brain.AutoGrind)
+                            return "已经在自动练级中了,不用重复开,系统自己找怪打"; // 幂等:省一轮重调
+                        brain.AutoGrind = wantStart;
                         if (brain.AutoGrind)
                         {
                             brain.FollowTargetId = 0;
                             brain.MoveTarget = null;
                         }
                         return brain.AutoGrind ? "开始自动练级" : "停止自动练级";
+                    }
                     case "follow_player":
                         return Follow(brain, args["player"]?.ToString(), arrivalStops: false);
                     case "goto_player":

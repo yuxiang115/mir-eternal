@@ -46,6 +46,11 @@ namespace GameServer.Bots
         // ---- 聊天记忆(主线程写,快照读取) ----
         public readonly Queue<BotSnapshot.SeenChat> ChatMemory = new Queue<BotSnapshot.SeenChat>();
 
+        /// <summary>本次上线累计击杀数(观察战绩+实验指标)。</summary>
+        public int _killsSinceLogin;
+        private string _lastCombatTargetName;
+        private int _lastGoldSeen = -1;
+
         /// <summary>最近一次喊话时间(say 节流用,防 bot 互聊刷屏)。</summary>
         public DateTime LastSayTime;
         /// <summary>本轮思考是"被搭话"触发的(回复不受节流限制)。</summary>
@@ -577,7 +582,7 @@ namespace GameServer.Bots
             if (player != null)
             {
                 var weapon = player.Equipment.TryGetValue(0, out var w) ? w.Name : "空手";
-                sb.Append("[你的近况] ").Append(player.CurrentLevel).Append("级").Append(player.CharRole)
+                sb.Append("[你的近况] 上线以来击杀" + _killsSinceLogin + "只 ").Append(player.CurrentLevel).Append("级").Append(player.CharRole)
                   .Append(" 金币").Append(player.NumberGoldCoins)
                   .Append(" 主手").Append(weapon)
                   .Append(s.AutoGrinding ? " 挂机练级中" : s.FollowTarget != null ? " 正跟着" + s.FollowTarget : s.CombatTarget != null ? " 正在打" + s.CombatTarget : "")
@@ -642,6 +647,13 @@ namespace GameServer.Bots
         private void MaintainMemory(PlayerObject player)
         {
             var now = MainProcess.CurrentTime;
+            // 金币变动日志(捡钱/买药/交易 —— 经济行为观察)
+            if (_lastGoldSeen >= 0 && player.NumberGoldCoins != _lastGoldSeen)
+            {
+                var delta = player.NumberGoldCoins - _lastGoldSeen;
+                BotLogger.Log(Definition.Name, "econ", "金币 " + (delta > 0 ? "+" : "") + delta + " → " + player.NumberGoldCoins);
+            }
+            _lastGoldSeen = player.NumberGoldCoins;
             if (TeamInviterName != null && now > TeamInviteExpires)
                 ClearTeamInvite(); // 邀请过期(5分钟),不再显示
             foreach (var commitment in Memory.Commitments)
@@ -1036,6 +1048,14 @@ namespace GameServer.Bots
             MapObject target;
             if (!MapGatewayProcess.Objects.TryGetValue(CombatTargetId, out target) || target.Died)
             {
+                // 怪死亡后对象很快从全局表移除,TryGetValue 拿不到 —— 用最近攻击目标名兜底记账
+                var killedName = target != null ? target.ObjectName : _lastCombatTargetName;
+                if (killedName != null)
+                {
+                    _killsSinceLogin++;
+                    BotLogger.Log(Definition.Name, "kill", killedName + " (累计" + _killsSinceLogin + ")");
+                    _lastCombatTargetName = null;
+                }
                 CombatTargetId = 0;
                 if (AutoGrind) return false;          // 挂机:下一轮 ReflexGrind 自动找新目标
                 _nextThinkTime = MainProcess.CurrentTime; // 手动打完,让 LLM 决定下一步
@@ -1160,11 +1180,13 @@ namespace GameServer.Bots
             RebuildPath(target);
             MoveTarget = target;
             MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 附近没怪了,挪窝去 " + nearest.RegionName + "(" + target.X + "," + target.Y + ")");
+            BotLogger.Log(Definition.Name, "event", "挪窝 → " + nearest.RegionName + "(" + target.X + "," + target.Y + ")");
             return true;
         }
 
         private void AttackStep(PlayerObject player, MapObject target)
         {
+            _lastCombatTargetName = target.ObjectName;
             var distance = player.GetDistance(target);
             var skillId = GetAttackSkillId(player);
             var range = GetSkillRange(skillId);
