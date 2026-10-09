@@ -264,11 +264,14 @@ namespace GameServer.Bots
             foreach (var p in snapshot.Players)
                 brain.KnownPlayers[p.Id] = p.Name;
 
+            // 血量只在"险情/脱险"时才是大脑的新闻(跌穿40%首次、濒死回到60%),
+            // 普通战斗抖动不是 —— 反射层管喝药;原来掉15个百分点就报事件,
+            // 低级号被羊啃一口就触发,战斗中每5秒惊醒一次大脑说"无动作"(实测33%的调用是空转)
             var hpPercent = snapshot.MaxHp > 0 ? snapshot.Hp * 100 / snapshot.MaxHp : 100;
-            if (hpPercent < brain.LastHpPercent - 15)
-                snapshot.Events.Add("血量掉到" + hpPercent + "%");
-            else if (hpPercent > brain.LastHpPercent + 30 && brain.LastHpPercent > 0)
-                snapshot.Events.Add("血量恢复到" + hpPercent + "%");
+            if (hpPercent < 40 && brain.LastHpPercent >= 40)
+                snapshot.Events.Add("血量掉到" + hpPercent + "%,有点危险");
+            else if (hpPercent >= 60 && brain.LastHpPercent > 0 && brain.LastHpPercent < 25)
+                snapshot.Events.Add("血量从濒死回到" + hpPercent + "%,稳住了");
             brain.LastHpPercent = hpPercent;
 
             if (player.CurrentLevel > brain.LastLevel && brain.LastLevel > 0)

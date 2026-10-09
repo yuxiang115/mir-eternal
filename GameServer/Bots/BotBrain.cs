@@ -546,10 +546,12 @@ namespace GameServer.Bots
                             "in=" + inTotal + " hit=" + result.CacheHitTokens + " miss=" + (inTotal - result.CacheHitTokens) + " (" + hitPct + "%) ctx=" + _lastPromptTokens);
                     }
 
-                    // 空轮(没动作、没被搭话、也没新事件):这轮观察不入历史 ——
-                    // 否则上下文会被"继续挂机/无事"的垃圾轮淹没,决策质量随之下滑
+                    // 空轮(没动作、没被搭话、也没真事件):这轮观察不入历史 ——
+                    // 否则上下文会被"继续挂机/无事"的垃圾轮淹没,决策质量随之下滑。
+                    // (血量抖动事件已在快照侧收紧成险情语义,这里的 Events 全是真事件)
+                    var saidSomething = !string.IsNullOrWhiteSpace(result.Content);
                     var meaningful = result.ToolCalls.Count > 0 || IsReplying || snapshot.Events.Count > 0;
-                    if (!meaningful)
+                    if (!meaningful || (!saidSomething && result.ToolCalls.Count == 0))
                     {
                         _conversation.RemoveAt(_conversation.Count - 1); // 回滚本轮观察
                         calls = result.ToolCalls;
@@ -562,7 +564,9 @@ namespace GameServer.Bots
                     }
                     else
                     {
-                        _conversation.Add(new LlmMessage("assistant", (result.Content ?? "") + "\n[动作] (无动作)"));
+                        // 只存模型自己的原话,不再拼 "[动作] (无动作)" 伪后缀 ——
+                        // 那是在教模型用文本写伪动作(实测它学会了"[动作] stop({})"),和工具协议打架
+                        _conversation.Add(new LlmMessage("assistant", result.Content ?? ""));
                     }
                     calls = result.ToolCalls;
                 }
@@ -616,14 +620,25 @@ namespace GameServer.Bots
                 _thinking = false;
                 if (brain_pending != null)
                     PendingToolCalls = brain_pending;
-                // 有新鲜事(聊天/事件)时反应快一点,平常按配置节奏,加随机抖动避免机械规律
+                // 无动作指数退避:连续空转的轮,间隔翻倍(5s→10→20→40→60封顶)。
+                // 真实新闻(聊天/邀请/死亡)仍会走 ScheduleThink 的立即唤醒,不受影响;
+                // 一旦有真实工具调用立即复位。实测33%的调用是无动作空转,全靠这把闸
+                if (calls.Count == 0)
+                    _noActionStreak++;
+                else
+                    _noActionStreak = 0;
                 var interval = BotManager.Config.ThinkIntervalMs;
                 if (!_recentActivity)
                     interval *= 6; // 没新鲜事:30秒+抖动(在TTL内,cache hit免费)
+                else if (_noActionStreak > 0)
+                    interval *= Math.Min(12, 1 << Math.Min(4, _noActionStreak));
                 var jitter = interval * (0.7 + MainProcess.RandomNumber.NextDouble() * 0.6);
                 _nextThinkTime = MainProcess.CurrentTime.AddMilliseconds(jitter);
             }
         }
+
+        /// <summary>连续无工具调用的思考轮数(指数退避用)。</summary>
+        private int _noActionStreak;
 
         /// <summary>进图时构建地图信息消息(纯 append,返回 null 表示没内容)。</summary>
         private string BuildMapInfoMessage(BotSnapshot snapshot)
