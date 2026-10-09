@@ -1064,6 +1064,7 @@ namespace GameServer.Bots
 
             if (target.CurrentMap != player.CurrentMap)
             {
+                BotLogger.Log(Definition.Name, "event", "攻击目标丢失(换图): " + target.ObjectName);
                 CombatTargetId = 0;
                 return false;
             }
@@ -1071,6 +1072,7 @@ namespace GameServer.Bots
             var distance = player.GetDistance(target);
             if (distance > BotManager.Config.Reflex.ChaseMaxDistance)
             {
+                BotLogger.Log(Definition.Name, "event", "追击放弃(超" + distance + "格): " + target.ObjectName);
                 CombatTargetId = 0;
                 return false;
             }
@@ -1347,6 +1349,7 @@ namespace GameServer.Bots
                 {
                     _pathRetried = true;
                     RebuildPath(MoveTarget.Value); // 路径可能被占/过时,重算一条再试
+                    BotLogger.Log(Definition.Name, "event", "寻路重算(原路被堵/无进展)");
                     return;
                 }
                 _pathRetried = false;
@@ -1417,10 +1420,10 @@ namespace GameServer.Bots
                     // 朝"下一点"走;隔一格以上时用跑步,步进目标取更远的点,减少越点
                     var next = _pathSteps.First.Value;
                     var ahead = _pathSteps.First.Next != null ? _pathSteps.First.Next.Value : next;
-                    var dist = Chebyshev(player.CurrentPosition, next);
+                    var dist = Chebyshev(player.CurrentPosition, ahead); // 用前瞻点判距:路径点彼此紧邻,看 next 永远是1格就走不跑
                     var stepped = false;
 
-                    if (dist >= 2 && ahead != next && player.CanRun())
+                    if (dist >= 2 && player.CanRun())
                     {
                         var runDirection = ComputingClass.GetDirection(player.CurrentPosition, ahead);
                         var step1 = ComputingClass.前方坐标(player.CurrentPosition, runDirection, 1);
