@@ -33,14 +33,6 @@ namespace GameServer.Bots
                 Tool("whisper", "私聊指定玩家(全服任何距离)。",
                     Param("player", "string", "目标玩家名字"),
                     Param("text", "string", "要说的内容")),
-                Tool("remember", "把重要的事写进你的长期记忆,服务器重启也记得。记玩家用'关于玩家名: 印象';游戏门道用'知识: ...'(怪的数值/掉落/地图/物价,越摸越懂);近况用'近况: ...';大事用'里程碑: ...'。",
-                    Param("text", "string", "要记住的内容")),
-                Tool("make_plan", "登记一个带时间的约定/计划,到点系统会提醒你去兑现(重启也不忘)。答应玩家'明晚8点'这类事时必须登记。时间写法:'20:00'、'明晚8点'、'10-09 20:00'、'2小时后'。",
-                    Param("what", "string", "约定内容,如'和123213组队打祖玛'"),
-                    Param("when", "string", "什么时候,如'明晚8点'"),
-                    Param("player", "string", "跟谁约的(玩家名,可空)", required: false)),
-                Tool("plan_done", "一条约定办完了/取消了,销掉它(描述写一部分就行)。",
-                    Param("what", "string", "约定的内容(一部分即可)")),
                 Tool("grind_nearby", "开始/停止自动打怪练级(自己找怪、追击、捡掉落,像真人挂机)。打完想停就传 false。",
                     Param("start", "boolean", "true=开始挂机练级,false=停下", required: false)),
                 Tool("follow_player", "持续跟随一名玩家,保持约3格距离。",
@@ -78,19 +70,24 @@ namespace GameServer.Bots
                 Tool("buy_item", "去村里商店买东西(红药蓝药/技能书:练级前看药够不够,不够就来买;商店有本职业技能书就买来学)。",
                     Param("name", "string", "物品名(如 金创药/魔法药,写一部分也行)"),
                     Param("count", "integer", "买几个", required: false)),
-                Tool("update_relation", "更新你对某个玩家的关系认知:是朋友还是仇人,好感多少。被坑了记仇,受过恩记情 —— 这决定你以后怎么对他。",
-                    Param("player", "string", "玩家名"),
-                    Param("relation", "string", "路人/熟人/朋友/兄弟/仇人"),
-                    Param("affinity", "integer", "好感 -100~+100", required: false),
-                    Param("note", "string", "为什么(一句话)", required: false)),
+                Tool("workspace_search", "搜自己的记忆/认知:信念/关系/印象/知识/里程碑/待办/目标。只返回当前有效版本(被推翻的旧认知默认不出现);想回顾'我以前为什么那么想'加 include_history。返回末尾会提示还有多少条没列出。",
+                    Param("query", "string", "关键词(人名/怪名/地名/物名)"),
+                    Param("include_history", "boolean", "要不要带已被推翻的旧认知(溯源用)", required: false)),
+                Tool("workspace_edit", "写/改自己的认知。路径:currently=当前惦记(自由改写);belief=对一个具体对象的判断(改了旧的会被标记取代,不许新旧并存——想改看法就用这);knowledge=游戏门道(记规律别记流水账,观察里能再看到的别记);milestone=大事记;people=对某人的印象。写之前先想想:这是规律还是一次流水?一次性大事(第一次被谁击败/被人救)也值得记。",
+                    Param("path", "string", "currently/belief/knowledge/milestone/people"),
+                    Param("subject", "string", "belief/people 必填:关于谁或什么;其他路径留空"),
+                    Param("content", "string", "内容( belief 建议带依据:据谁说的/哪次经历)"),
+                    Param("confidence", "number", "belief 置信 0~1:亲历高,传闻低(留空=0.7)", required: false)),
+                Tool("goal_manage", "管理目标:action=create(新目标,语义去重)/complete(达成)/abandon(放弃)。目标是从你的性格和经历里长出来的,不是任务清单——完成或放弃都正常,别硬凑。",
+                    Param("action", "string", "create/complete/abandon"),
+                    Param("text", "string", "目标内容(complete/abandon 写一部分就行)")),
+                Tool("plan_manage", "计划管理:action=set_day(当天安排一两句,过天作废)/commit(带时间的约定,到点系统叫你兑现)/done(办完销掉)/set_activity(登记当前主攻的活动:攒钱买X/冲X级/打某件装备——写清怎样算成,系统会帮你盯进度,失败要换法不是硬重复)。",
+                    Param("action", "string", "set_day/commit/done/set_activity"),
+                    Param("text", "string", "内容(commit 支持时间写法:'20:00'/'明晚8点'/'2小时后')"),
+                    Param("success", "string", "set_activity 专用:怎样算完成(如'金币>=800且背包有青铜剑')", required: false)),
+                Tool("activity_status", "查当前主攻活动的进度/卡点(系统按真实金币等校验'金币>=N'类条件)。挂机久了抬头看一眼自己在干嘛、干到哪了。"),
                 Tool("check_guide", "查官方攻略:自己这等级该去哪张图练、打什么怪、穿什么武器(本服真实数据生成的)。不知道该干嘛/觉得练得慢/想换图时先查这个。",
                     Param("level", "integer", "查哪个等级段的(不填=自己当前等级)", required: false)),
-                Tool("set_goal", "给自己定一个长期目标(没有截止日的那种,如'冲40级''攒钱买裁决''交三个朋友')。定了会一直记着,做事围着它转。",
-                    Param("text", "string", "目标")),
-                Tool("set_plan", "定今天的计划(一两句话,每天开始时定一次)。观察里会常驻提醒,过天自动作废,做完随时可以改。",
-                    Param("text", "string", "今天的安排,如'上午冲8级,傍晚和水晶之恋组队,睡前捡的垃圾装备找人卖掉'")),
-                Tool("drop_goal", "放弃一个目标(达成了或不想追了)。描述写一部分就行。",
-                    Param("text", "string", "目标内容(一部分)")),
                 Tool("team_accept", "接受刚收到的组队邀请(谁邀请的就跟他一队)。"),
                 Tool("team_reject", "拒绝组队邀请(不想跟就说一声,别晾着)。"),
                 Tool("leave_team", "退出当前队伍。"),
@@ -162,6 +159,51 @@ namespace GameServer.Bots
                         return Say(brain, args["text"]?.ToString());
                     case "whisper":
                         return Whisper(brain, args["player"]?.ToString(), args["text"]?.ToString());
+                    case "workspace_search":
+                        return brain.Memory.SearchWorkspace(args["query"]?.ToString() ?? "", args["include_history"]?.Type == JTokenType.Boolean && args["include_history"].Value<bool>());
+                    case "workspace_edit":
+                        return WorkspaceEdit(brain, args["path"]?.ToString() ?? "", args["subject"]?.ToString() ?? "", args["content"]?.ToString() ?? "", args["confidence"]?.Value<double?>() ?? 0.7);
+                    case "goal_manage":
+                    {
+                        var action = args["action"]?.ToString() ?? "";
+                        var text = (args["text"]?.ToString() ?? "").Trim();
+                        var mem = brain.Memory;
+                        if (action == "create")
+                        {
+                            if (text.Length < 2) return "目标太空";
+                            if (mem.Goals.Count >= 3) return "目标太多记不住(最多3个),先 abandon 一个";
+                            var norm = System.Text.RegularExpressions.Regex.Replace(text, @"[\s,，。;；!！?？~～]", "");
+                            var dup = mem.Goals.FirstOrDefault(g =>
+                            {
+                                var ng = System.Text.RegularExpressions.Regex.Replace(g, @"[\s,，。;；!！?？~～]", "");
+                                return ng == norm || (ng.Length >= 6 && norm.Contains(ng)) || (norm.Length >= 6 && ng.Contains(norm));
+                            });
+                            if (dup != null) return "已有相近目标: " + dup + " —— 围着它做就行";
+                            mem.Goals.Add(text); mem.Dirty = true;
+                            BotLogger.Log(brain.Definition.Name, "memory", "定目标: " + text);
+                            return "目标已立: " + text;
+                        }
+                        var hit = mem.Goals.LastOrDefault(g => g.Contains(text));
+                        if (hit == null) return "没这个目标";
+                        mem.Goals.Remove(hit); mem.Dirty = true;
+                        BotLogger.Log(brain.Definition.Name, "memory", (action == "complete" ? "达" : "弃") + "目标: " + hit);
+                        return (action == "complete" ? "目标达成: " : "已放下: ") + hit + (action == "complete" ? "(干成一件事,想想下一个追什么)" : "");
+                    }
+                    case "plan_manage":
+                        return PlanManage(brain, args["action"]?.ToString() ?? "", args["text"]?.ToString() ?? "", args["success"]?.ToString() ?? "");
+                    case "activity_status":
+                    {
+                        var a = brain.Memory.Activity;
+                        if (a == null) return "当前没有主攻活动(想推什么用 plan_manage set_activity 登记,写清怎样算成)";
+                        var gold = brain.Player != null ? brain.Player.NumberGoldCoins : 0;
+                        var done = a.Check(gold);
+                        if (done == "done" && a.Status == "active")
+                        {
+                            a.Status = "done"; brain.Memory.Dirty = true;
+                            return "[活动完成!] " + a.Goal + "(条件'" + a.SuccessCondition + "'已满足)—— 想想下一个追什么,顺便把这次的经验记下来(workspace_edit knowledge)";
+                        }
+                        return "当前活动: " + a.Goal + (char)10 + "做法: " + a.Action + (char)10 + "成功条件: " + a.SuccessCondition + (char)10 + "状态: " + a.Status + (a.Blocker.Length > 0 ? (char)10 + "卡点: " + a.Blocker : "") + (a.ProgressNote.Length > 0 ? (char)10 + a.ProgressNote : "");
+                    }
                     case "remember":
                     {
                         var reply = brain.Memory.Remember(args["text"]?.ToString());
@@ -587,6 +629,101 @@ namespace GameServer.Bots
         }
 
         /// <summary>读背包里的技能书学技能(UseItem 即学,服务器消耗书并学会)。</summary>
+
+        /// <summary>workspace_edit 路由:currently 自由改写 / belief 矛盾改源头(supersede) / knowledge 去重入册 / milestone / people。</summary>
+        private static string WorkspaceEdit(BotBrain brain, string path, string subject, string content, double confidence)
+        {
+            content = (content ?? "").Trim();
+            var mem = brain.Memory;
+            switch (path)
+            {
+                case "currently":
+                    if (content.Length < 3) return "惦记的事太空";
+                    mem.Currently = content; mem.Dirty = true;
+                    BotLogger.Log(brain.Definition.Name, "memory", "改当前惦记: " + content);
+                    return "当前惦记已更新(它会跟着你做事自然过期,不用刻意维护)";
+                case "belief":
+                    subject = (subject ?? "").Trim();
+                    if (subject.Length == 0 || content.Length < 3) return "belief 要写清关于谁/什么(subject)和判断(content)";
+                    var old = mem.Beliefs.FirstOrDefault(b => b.Subject == subject && b.Status == "active");
+                    var b2 = mem.ReviseBelief(subject, content, Math.Max(0.1, Math.Min(1, confidence)), 0.7, "");
+                    var ev = content.Contains("据") ? "" : " (建议带上依据:亲历还是听谁说的,confidence 相应给)";
+                    BotLogger.Log(brain.Definition.Name, "memory", (old != null ? "修订信念 rev" + b2.Revision + ": " : "新信念: ") + subject + " = " + content);
+                    return (old != null ? "信念已修订(旧版[" + old.Content + "]自动归档,以后检索只用新版): " : "新信念: ") + subject + " = " + content + ev;
+                case "knowledge":
+                    if (content.Length < 3) return "知识太短";
+                    if (mem.Knowledge.Any(k => k.Contains(content.Substring(0, Math.Min(8, content.Length)))))
+                        return "已经知道了(别重复记)";
+                    mem.Knowledge.Add(content);
+                    if (mem.Knowledge.Count > 40) mem.Knowledge = mem.Knowledge.Skip(mem.Knowledge.Count - 40).ToList();
+                    mem.Dirty = true;
+                    return "新知识+1(记的是规律不是流水就对)";
+                case "milestone":
+                    if (content.Length < 3) return "太短";
+                    mem.RecordMilestone(content, 5);
+                    return "已记入大事记";
+                case "people":
+                    subject = (subject ?? "").Trim();
+                    if (subject.Length == 0) return "people 要写 subject=玩家名";
+                    mem.People[subject] = content;
+                    mem.Dirty = true;
+                    return "已更新对 " + subject + " 的印象";
+                default:
+                    return "路径要写 currently/belief/knowledge/milestone/people";
+            }
+        }
+
+        /// <summary>plan_manage:当天安排/带时约定/活动卡。</summary>
+        private static string PlanManage(BotBrain brain, string action, string text, string success)
+        {
+            text = (text ?? "").Trim();
+            var mem = brain.Memory;
+            switch (action)
+            {
+                case "set_day":
+                    if (text.Length < 2) return "计划太空";
+                    var isNew = string.IsNullOrWhiteSpace(mem.DailyPlan);
+                    mem.DailyPlan = text; mem.PlanDate = DateTime.Now.ToString("MM-dd"); mem.Dirty = true;
+                    BotLogger.Log(brain.Definition.Name, "memory", (isNew ? "定当日计划: " : "改当日计划: ") + text);
+                    return (isNew ? "今天的计划已记下: " : "计划已改: ") + text;
+                case "commit":
+                {
+                    if (text.Length < 3) return "约定内容太空(支持'和XX组队 20:00'这种带时间的写法)";
+                    var m = System.Text.RegularExpressions.Regex.Match(text, @"(\d{1,2}:\d{2}|明晚?\d{1,2}点?|明天\d{1,2}点?|\d+小时后)");
+                    var when = m.Success ? m.Value : "2小时后";
+                    var desc = m.Success ? text.Replace(m.Value, "").Trim('，',',','。',' ','）',')') : text;
+                    if (desc.Length < 2) desc = text;
+                    var commitment = mem.MakeCommitment(desc, when, null);
+                    mem.Dirty = true;
+                    BotLogger.Log(brain.Definition.Name, "commit", "登记: " + desc + " @ " + commitment.DueAt.ToString("MM-dd HH:mm"));
+                    return "已登记,到点叫你: " + desc + " (" + commitment.DueAt.ToString("MM-dd HH:mm") + ")";
+                }
+                case "done":
+                {
+                    var c = mem.Commitments.LastOrDefault(x => x.Status == "pending" && x.Description.Contains(text));
+                    if (c == null) return "没这个约定";
+                    c.Status = "done"; mem.Dirty = true;
+                    return "已销: " + c.Description;
+                }
+                case "set_activity":
+                {
+                    if (text.Length < 3) return "活动内容太空";
+                    var card = new BotActivityCard { Goal = text, Action = text, SuccessCondition = string.IsNullOrWhiteSpace(success) ? "自己判断" : success };
+                    // 已有活动未完:自动转暂存(可回来恢复)
+                    if (mem.Activity != null && mem.Activity.Status == "active")
+                    {
+                        mem.Activity.Status = "suspended";
+                        card.Suspended = mem.Activity;
+                    }
+                    mem.Activity = card; mem.Dirty = true;
+                    BotLogger.Log(brain.Definition.Name, "memory", "主攻活动: " + text + (card.SuccessCondition != "自己判断" ? " (" + card.SuccessCondition + ")" : ""));
+                    return "主攻活动已登记: " + text + (char)10 + "成功条件: " + card.SuccessCondition + (char)10 + "(挂机时系统帮你盯'金币>=N'类进度;卡住了要换方法,不是硬重复)";
+                }
+                default:
+                    return "action 要写 set_day/commit/done/set_activity";
+            }
+        }
+
         private static string LearnSkill(BotBrain brain, string bookName)
         {
             bookName = (bookName ?? "").Trim();

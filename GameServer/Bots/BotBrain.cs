@@ -796,6 +796,15 @@ namespace GameServer.Bots
             else
                 sb.Append("[今天还没计划] 想好今天干什么就调 set_plan 登记一两句(比如'上午冲8级,晚上找人组队')\n");
 
+            // 认知工作区:当前惦记(GA currently 式,agent 自由改写)+ 前台活动卡(G0)
+            if (!string.IsNullOrWhiteSpace(Memory.Currently))
+                sb.Append("[当前惦记] ").Append(Memory.Currently).Append((char)10);
+            var act = Memory.Activity;
+            if (act != null && act.Status == "active")
+                sb.Append("[当前活动] ").Append(act.Goal)
+                  .Append(" — ").Append(string.IsNullOrWhiteSpace(act.SuccessCondition) || act.SuccessCondition == "自己判断" ? "自己判断完成" : act.SuccessCondition)
+                  .Append(act.Blocker.Length > 0 ? " [卡住: " + act.Blocker + " —— 该换法了]" : "").Append((char)10);
+
             // 家底见底:没钱没药是最高优先级的生存决策输入(实测:金币0的号反复死17次也没自救)
             if (s.Gold < 100 && s.HpPotions <= 3)
                 sb.Append("[家底见底] 金币").Append(s.Gold).Append(" 红药").Append(s.HpPotions)

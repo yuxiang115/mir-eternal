@@ -61,6 +61,54 @@ namespace GameServer.Bots
         }
     }
 
+    /// <summary>G0 认知记录:主观信念。身份化字段(id/revision/status/supersedes/evidence)支撑
+    /// 溯源与"矛盾改源头"(v1.3 设计 §记忆记录身份)。</summary>
+    public class BotBelief
+    {
+        public string Id;
+        /// <summary>关于谁/什么(玩家名/怪/地图/打法)。</summary>
+        public string Subject;
+        /// <summary>当前判断(主观,可错)。</summary>
+        public string Content;
+        /// <summary>0~1:亲历=高,传闻=低(允许存疑)。</summary>
+        public double Confidence;
+        /// <summary>0~1:多重要(检索与反思用)。</summary>
+        public double Importance;
+        /// <summary>依据(哪次经历/谁说的)。</summary>
+        public string Evidence;
+        public int Revision;
+        /// <summary>active=当前有效 / superseded=已被新认知取代(留档溯源)。</summary>
+        public string Status = "active";
+        public string Supersedes;
+        public string UpdatedAt;
+    }
+
+    /// <summary>G0 前台活动卡:单一执行意图(目标/怎么算成/进度/卡点)。
+    /// 规则:一次只有一张;打断转 Suspended 保留进度;失败必须换法不是重试(v1.3 G0)。</summary>
+    public class BotActivityCard
+    {
+        public string Goal;
+        public string Action;
+        /// <summary>成功条件,支持 "金币>=N" 等程序可验证形式;其余为 agent 口头标准。</summary>
+        public string SuccessCondition;
+        /// <summary>active / suspended / done / failed。</summary>
+        public string Status = "active";
+        public string ProgressNote = "";
+        public string Blocker = "";
+        /// <summary>被打断时的暂存(suspended 时存原内容,恢复时还原)。</summary>
+        public BotActivityCard Suspended;
+        public string CreatedAt = DateTime.Now.ToString("MM-dd HH:mm");
+
+        /// <summary>程序侧可验证条件检查(金币>=N 是当前唯一硬条件,其余靠观察事实)。</summary>
+        public string Check(int gold)
+        {
+            if (SuccessCondition == null) return null;
+            var m = System.Text.RegularExpressions.Regex.Match(SuccessCondition, @"金币\s*>=\s*(\d+)");
+            if (m.Success) return int.Parse(m.Groups[1].Value) <= gold ? "done" : null;
+            return null;
+        }
+    }
+
     /// <summary>
     /// 机器人的长期记忆,跨服务器重启持久化(BotMemory/<角色名>.json)。
     /// 分层(参考 Generative Agents / MemGPT 的裁剪版):
@@ -97,6 +145,76 @@ namespace GameServer.Bots
         public string DailyPlan = "";
         /// <summary>当日计划是哪天定的(MM-dd);不是今天就自动失效,提示重新定。</summary>
         public string PlanDate = "";
+
+        // ============ G0 Cognitive Workspace(v1.3):认知记录身份化 ============
+
+        /// <summary>当前惦记(GA currently 式:有时效的动机,agent 自由改写,不是终身目标)。</summary>
+        public string Currently = "";
+        /// <summary>主观信念层:对实力/打法/行情的判断,可被证据修订(supersede 语义,旧版留档可溯源)。</summary>
+        public List<BotBelief> Beliefs = new List<BotBelief>();
+        /// <summary>前台活动卡(G0):正在做什么/怎样算成/卡在哪;null=没有在推的明确活动。</summary>
+        public BotActivityCard Activity;
+
+        /// <summary>修订信念:矛盾改源头——新认知 supersede 旧认知(旧条保留 status=superseded 供溯源),
+        /// 绝不并排共存(Memora:64%错误来自没忘掉过时认知;Letta:fix the stale entry at the source)。</summary>
+        public BotBelief ReviseBelief(string subject, string content, double confidence, double importance, string evidence)
+        {
+            var old = Beliefs.FirstOrDefault(b => b.Subject == subject && b.Status == "active");
+            var belief = new BotBelief
+            {
+                Id = "belief-" + Guid.NewGuid().ToString("N").Substring(0, 8),
+                Subject = subject,
+                Content = content,
+                Confidence = confidence,
+                Importance = importance,
+                Evidence = evidence ?? "",
+                Revision = (old != null ? old.Revision : 0) + 1,
+                Status = "active",
+                Supersedes = old != null ? old.Id : null,
+                UpdatedAt = DateTime.Now.ToString("MM-dd HH:mm"),
+            };
+            if (old != null) old.Status = "superseded";
+            Beliefs.Add(belief);
+            if (Beliefs.Count > 60)
+                Beliefs = Beliefs.OrderByDescending(b => b.Status == "active" ? 1 : 0).ThenByDescending(b => b.UpdatedAt).Take(60).ToList();
+            Dirty = true;
+            return belief;
+        }
+
+        /// <summary>检索默认只返回当前有效认知(active);include_history=true 时带 superseded 溯源。
+        /// 附 has_more 提示,防 partial retrieval(Memora:72%记忆错误/100%推理错误=检索不全)。</summary>
+        public string SearchWorkspace(string query, bool includeHistory, int take = 8)
+        {
+            var sb = new System.Text.StringBuilder();
+            var hits = 0; var total = 0;
+            Action<string, string> add = (tag, line) =>
+            {
+                total++;
+                if (hits < take) { sb.Append('[').Append(tag).Append("] ").Append(line).Append('\n'); hits++; }
+            };
+
+            foreach (var b in Beliefs.Where(b => (includeHistory || b.Status == "active") && b.Subject.Contains(query) || (b.Content != null && b.Content.Contains(query))))
+                add(b.Status == "active" ? "信念" : "信念(旧)", b.Subject + ": " + b.Content + " (置信" + b.Confidence.ToString("0.0") + ",据:" + b.Evidence + ",rev" + b.Revision + ")");
+            foreach (var kv in Relationships)
+                if (kv.Key.Contains(query) || (kv.Value != null && kv.Value.Note.Contains(query)))
+                    add("关系", kv.Key + "=" + kv.Value.Relation + "(" + kv.Value.Affinity + ") " + kv.Value.Note);
+            foreach (var kv in People)
+                if (kv.Key.Contains(query) || kv.Value.Contains(query))
+                    add("印象", kv.Key + ": " + kv.Value);
+            foreach (var k in Knowledge)
+                if (k.Contains(query)) add("知识", k);
+            foreach (var m in Milestones)
+                if (m.Text != null && m.Text.Contains(query)) add("里程碑", m.Text);
+            foreach (var c in Commitments)
+                if ((c.Description != null && c.Description.Contains(query)) || (c.WithPlayer != null && c.WithPlayer.Contains(query)))
+                    add("待办", c.Description + "(" + c.Status + "," + c.DueAt.ToString("MM-dd HH:mm") + ")");
+            foreach (var g in Goals)
+                if (g.Contains(query)) add("目标", g);
+
+            if (total == 0) return "没搜到关于\"" + query + "\"的认知(亲历少就多打听,别瞎猜)";
+            if (total > hits) sb.Append("(还有 ").Append(total - hits).Append(" 条相关没列出,换个更窄的词或翻页)\n");
+            return sb.ToString();
+        }
 
         [JsonIgnore]
         public bool Dirty;
