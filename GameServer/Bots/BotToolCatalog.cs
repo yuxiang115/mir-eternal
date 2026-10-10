@@ -86,6 +86,9 @@ namespace GameServer.Bots
                     Param("text", "string", "内容(commit 支持时间写法:'20:00'/'明晚8点'/'2小时后')"),
                     Param("success", "string", "set_activity 专用:怎样算完成(如'金币>=800且背包有青铜剑')", required: false)),
                 Tool("activity_status", "查当前主攻活动的进度/卡点(系统按真实金币等校验'金币>=N'类条件)。挂机久了抬头看一眼自己在干嘛、干到哪了。"),
+                Tool("npc_talk", "和NPC说话/接任务/交任务/开商店。先走到NPC旁边(move_to它站的位置),再调这个。回执是NPC说的话+可选选项(带编号),要选就再调一次带上 option。任务就在对话里接和交。",
+                    Param("npc", "string", "NPC名字(一部分)"),
+                    Param("option", "integer", "选第几项(第一次对话不填)", required: false)),
                 Tool("sell_item", "把东西卖给商店换钱(只收对应类型的店:药品店收药/武器店收武器…)。先人要在店附近:不知道店在哪就先在村里转转或问人。回执带卖了什么/单价/现在金币。",
                     Param("name", "string", "卖什么(名字一部分)"),
                     Param("count", "integer", "卖几个(不填=能卖的都卖)", required: false)),
@@ -195,6 +198,8 @@ namespace GameServer.Bots
                     }
                     case "plan_manage":
                         return PlanManage(brain, args["action"]?.ToString() ?? "", args["text"]?.ToString() ?? "", args["success"]?.ToString() ?? "");
+                    case "npc_talk":
+                        return NpcTalk(brain, args["npc"]?.ToString() ?? "", args["option"]?.Value<int?>() ?? 0);
                     case "sell_item":
                         return SellItem(brain, args["name"]?.ToString() ?? "", Math.Max(1, Math.Min(50, args["count"]?.Value<int?>() ?? 99)));
                     case "activity_status":
@@ -637,6 +642,34 @@ namespace GameServer.Bots
         /// <summary>读背包里的技能书学技能(UseItem 即学,服务器消耗书并学会)。</summary>
 
         /// <summary>workspace_edit 路由:currently 自由改写 / belief 矛盾改源头(supersede) / knowledge 去重入册 / milestone / people。</summary>
+        /// <summary>G1:和NPC对话。找12格内同名NPC;首次调=开始对话返回首页文本+选项;带option=选那一项继续。</summary>
+        private static string NpcTalk(BotBrain brain, string npcName, int option)
+        {
+            var player = brain.Player;
+            npcName = (npcName ?? "").Trim();
+            if (npcName.Length == 0) return "要写NPC名字";
+            GuardObject npc = null;
+            foreach (var g in MapGatewayProcess.NPCs.Values)
+            {
+                if (g == null || g.CurrentMap != player.CurrentMap) continue;
+                if (player.GetDistance(g) > 12) continue;
+                if ((g.ObjectName ?? "").Contains(npcName)) { npc = g; break; }
+            }
+            if (npc == null) return "12格内没有叫[" + npcName + "]的NPC(先move_to走过去;不知道在哪问人)";
+            if (option > 0 && (player.对话守卫 == null || !(player.对话守卫.ObjectName ?? "").Contains(npcName)))
+                return "对话已断开,重新调一次(不带option)先打开对话";
+            if (option > 0) { player.继续Npcc对话(option); }
+            else { player.开始Npcc对话(npc.ObjectId); }
+            var text = NpcDialogs.GetBufferFromDialogId(player.对话页面);
+            var content = System.Text.Encoding.UTF8.GetString(text).TrimEnd('\0');
+            content = content.Replace("<#Dft>", "").Replace("<#P0:", "(1)").Replace("<#P1:", "(2)")
+                .Replace(">", ". ").Replace("<#", "");
+            var brief = content.Length > 500 ? content.Substring(0, 500) + "..." : content;
+            BotLogger.Log(brain.Definition.Name, "act", "npc_talk(" + npcName + (option > 0 ? "," + option : "") + ")");
+            return npc.ObjectName + "说: " + brief + (brief.Length < 3 ? " (他没说什么,可能只管卖东西/传送,直接试sell_item或goto_map)" : "")
+                + " [要选选项就再调npc_talk带上option编号;对话30秒不选会断]";
+        }
+
         /// <summary>G1:卖东西给商店。找同图 12 格内带商店的 NPC 开店,按商店回收类型过滤背包,逐件卖并汇总。</summary>
         private static string SellItem(BotBrain brain, string name, int maxCount)
         {
