@@ -1,6 +1,7 @@
-# 《传奇永恒》真玩家闭环系统设计(v1.1,供 GPT+用户第二轮讨论)
+# 《传奇永恒》真玩家闭环系统设计(v1.2 · 定稿候选)
 
-> **版本**:v1.1 — 2026-10-09 深夜(v1.0 经 GPT 深度评审 9/10 方向·7.5/10 工程 + 用户人设批评,本版全部吸收)
+> **版本**:v1.2 — 2026-10-09(v1.1 + 用户 Workspace 架构构想 + GPT 第四轮评审全采纳;G0 批准,本版为开工版)
+> **v1.1→v1.2 变更**:①新增**架构总纲:三层 Context + Agent Workspace**(用户:稳定 system prompt + 记忆/计划/追求全部工具化 CRUD + append-only,吃 cache hit;GPT 细化:逻辑工作区非真文件系统/revision 回执/事实守卫/压缩前先落盘)②G0 重写为 8 步实施序(GPT)③Q1-Q4 全部落定④勘误:deepseek-flash 谷价 hit=$0.003/M(用户记成0.0003,差10倍;hit=miss的1/50方向不变);GA 的 currently 自动改写未经源码验证(派对=研究者种下的初始意图,GA 也是种子式)
 > **v1.0→v1.1 变更**:①人设改**三层种子式**(用户:例句太模板、终身追求框死想象力;调研出处=`persona-design-industry-research.md`,GA 源码 innate/learned/currently 结构);②新增 **G0 活动执行状态**(GPT:只有目标没有执行追踪=挂机机器人感的真根);③知识边界从 G3 前移 G1(GPT);④分期按 GPT 重排 G0-G4;⑤工具数修正为 18;⑥DailyPlan→Plan 去自然日绑定;⑦反馈加"事实 vs 推测"纪律;⑧规则 16 采用 GPT 版本(保留 2003 玩家语感,只禁编造上下线)。
 > **北极星不变**:12 个有自主意识的玩家把《传奇永恒》真正玩起来(打宝/升级/竞争/合作/经济/人际自运转闭环);agent 无上下线概念。
 
@@ -10,7 +11,48 @@
 
 GPT 的判词准确:**回路四件套(工具/反馈/记忆/计划)都在,但没有"目标执行状态"——agent 发起行动后不知道进展到哪、何时算成、失败该换法**。这正是"挂机机器人感"的最后一块拼图。
 
-### G0:活动执行状态(新增,最高优先)
+### G0:稳定 Prompt + Agent Workspace + 可恢复活动(架构总纲,最高优先)
+
+**三层 Context 分离(用户构想 × GPT 细化,全项目从此遵守)**:
+
+```
+Stable Prefix   世界规则/核心人设种子/工具schema/行为规范 —— 几乎永不变(缓存之根)
+Conversation    观察思考/工具调用与回执 —— 只 append,定期压缩
+Workspace       记忆/追求/计划/知识/关系/技能 —— 随时工具读写(认知权威版)
+```
+
+**Agent Workspace = 逻辑工作区(非真文件系统,底层即现有 BotMemory 各结构)**:
+
+```
+workspace://血饮狂刀/
+  persona.json         性格种子(稳定,agent 不可改)
+  currently.md         当前惦记(agent 可改写)
+  goals.json  plans.json  activity.json   (目标/计划/活动)
+  relationships.json   关系与证据
+  knowledge/           亲身/传闻/推测(分级标注)
+  episodes.jsonl       经历日志(事件自动追加,agent 可注释不可篡改事实)
+  reflections.md  skills/                  (反思/自己沉淀的打法)
+```
+
+**工具 6 件(吸收合并现有 7 个零散工具)**:
+| 工具 | 职责 | 替代 |
+|---|---|---|
+| `workspace_search(query, scope)` | 检索自己的经历/关系/知识/计划 | (新增) |
+| `workspace_read(path)` | 读当前版本 | check_guide 的个人部分 |
+| `workspace_edit(path, op, content, expected_revision)` | 增/改/废自己的认知 | remember/update_relation |
+| `goal_manage(action, ...)` | 创建/推进/完成/放弃目标 | set_goal/drop_goal |
+| `plan_manage(action, ...)` | 计划全生命周期 | make_plan/plan_done |
+| `activity_status()` | 查当前活动与服务器验证的真实进度 | (新增) |
+
+**四条铁律**:
+1. **事实守卫**:agent 可改"我讨厌毒玫瑰",不可通过 workspace 谎称"我 40 级";游戏事实永远以服务器为准
+2. **Revision 回执防旧认知**:每次 edit 回执附 `{path, revision, previous→current, evidence}` 直接 append——上下文里的旧印象被回执自然覆盖,历史消息永不动(缓存零伤害,解决 GPT 指出的"记忆更新了但历史还记着旧内容")
+3. **压缩前先落盘**:压缩流程改为 ①agent 把要长期留的写进 workspace ②程序核验写入成功 ③保存活动/未竟事项 ④生成摘要 ⑤重建最小 context(人格+自我认知+当前目标+当前活动)——Conversation 只记最近,Workspace 记住仍然重要的事
+4. **编辑要有价值**:不为写小状态制造无意义回合(output 是真金白银;prompt 引导)
+
+**活动执行状态(承接 v1.1,按 GPT 定稿)**:
+- `ForegroundActivity` ×1(唯一执行)+ `PendingGoals` ×N + `SuspendedActivity` ×1(被打断保留进度,回来可恢复)——不许多活动同时控制移动/战斗(意图冲突旧坑)
+- 活动卡字段不变(goal/successCondition 服务器可验证/progress/blocker/status)
 
 每个"有意图的活动"(非闲聊)由 LLM 发起时附一张**活动卡**,程序持续追踪:
 
@@ -142,9 +184,11 @@ GPT 正确:无作息后计划不该绑自然日。"打到某件装备"跨三天,
 
 缓存 94-98%+空转 0%+观察截断+90% 压缩线;可选无感旋钮 `PeakThinkIntervalMultiplier`(默认关)。
 
-## 九、给 GPT 的开放问题(v1.1 更新)
+## 九、已决问题(v1.2 落定,GPT 拍板)
 
-1. 活动卡的粒度:每张卡绑一个目标,还是允许并存 2-3 张(主线+临时)?我倾向 1 主 + 打断保护(正在攒钱时被约战,卡不销毁,回来接着推)
-2. 种子人设的"当前惦记"更新权:仅反思时改写,还是大事件即刻改写?(频繁改写=情绪化,稀少=迟钝;我倾向大事即刻+反思批量)
-3. 掉落统计的"目击 vs 拾取"区分实现成本:需要 hook 怪物死亡掉落事件(现在只有拾取事件);值得吗?
-4. G1 的红缨演示链作为发布门槛是否过严(需要 NPC 任务系统先打通)?
+1. **活动并存**:允许多目标,但单一 ForegroundActivity 执行 + PendingGoals 池 + 1 个可恢复 SuspendedActivity(帮忙救场后回来自动续上)✓
+2. **currently 更新权**:agent 主动决定,大事件可立即改;程序只提供事实(输了 PK),不替角色翻译成"想报仇"——事实归程序,意义归角色 ✓
+3. **目击 vs 拾取**:值得做但移 G1+(知识边界项);掉落事件按视野分发,绝不全服广播 ✓
+4. **红缨链门槛**:拆 5 个小闭环测试(自主赚钱/自主探索/自主学习/失败重规划/任务闭环)逐个过,红缨全链作为最终端到端验收,不阻塞功能发布 ✓
+
+**G0 自我管理验收(GPT 新增,采纳)**:系统跑一段时间后,_colony 应能展示每个 bot 的「当前目标/当前活动/正在学习(待确认的假设)/重要记忆/下一步」,且每条有真实来源(PK 事件/装备变化/自己的反思)——这是 coding agent 式"知道自己卡在哪"的能力。
