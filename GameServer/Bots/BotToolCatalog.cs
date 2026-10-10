@@ -89,6 +89,14 @@ namespace GameServer.Bots
                 Tool("npc_talk", "和NPC说话/接任务/交任务/开商店。先走到NPC旁边(move_to它站的位置),再调这个。回执是NPC说的话+可选选项(带编号),要选就再调一次带上 option。任务就在对话里接和交。",
                     Param("npc", "string", "NPC名字(一部分)"),
                     Param("option", "integer", "选第几项(第一次对话不填)", required: false)),
+                Tool("query_area", "查地图情报:某种怪在哪些刷怪点(带等级/数量/离你多远/路线状态),或这张图有哪些刷怪区。地图是公共知识(像看攻略站),实时占用情况要自己到那看。想知道去哪打怪/换图先查这个。",
+                    Param("monster", "string", "怪名(一部分),如'稻草人';不填=列当前图的刷怪区"),
+                    Param("map", "string", "限定哪张图(不填=当前图)", required: false)),
+                Tool("query_route", "查路线可达性(不动身):从当前到某坐标/某怪区能不能走到、多远、要不要换图。去远地方前先查,免得白跑。失败会告诉你原因和附近可站替代点。",
+                    Param("x", "integer", "目标x"),
+                    Param("y", "integer", "目标y")),
+                Tool("locate_player", "找人:队友(实时共享)/视野内玩家(实时)/记得的熟人(上次目击时间)。跟丢了人/找人组队/赴约用。",
+                    Param("name", "string", "玩家名(一部分)")),
                 Tool("sell_item", "把东西卖给商店换钱(只收对应类型的店:药品店收药/武器店收武器…)。先人要在店附近:不知道店在哪就先在村里转转或问人。回执带卖了什么/单价/现在金币。",
                     Param("name", "string", "卖什么(名字一部分)"),
                     Param("count", "integer", "卖几个(不填=能卖的都卖)", required: false)),
@@ -200,6 +208,12 @@ namespace GameServer.Bots
                         return PlanManage(brain, args["action"]?.ToString() ?? "", args["text"]?.ToString() ?? "", args["success"]?.ToString() ?? "");
                     case "npc_talk":
                         return NpcTalk(brain, args["npc"]?.ToString() ?? "", args["option"]?.Value<int?>() ?? 0);
+                    case "query_area":
+                        return QueryArea(brain, args["monster"]?.ToString() ?? "", args["map"]?.ToString() ?? "");
+                    case "query_route":
+                        return QueryRoute(brain, args["x"]?.Value<int?>() ?? 0, args["y"]?.Value<int?>() ?? 0);
+                    case "locate_player":
+                        return LocatePlayer(brain, args["name"]?.ToString() ?? "");
                     case "sell_item":
                         return SellItem(brain, args["name"]?.ToString() ?? "", Math.Max(1, Math.Min(50, args["count"]?.Value<int?>() ?? 99)));
                     case "activity_status":
@@ -467,12 +481,20 @@ namespace GameServer.Bots
             if (x <= 0 || y <= 0)
                 return "坐标不合法";
 
+            // W2 两段式:先导航后承诺——找不到路直接告诉 agent(不再静默直走撞墙)
+            var status = brain.RouteTo(new Point(x, y), out var path);
+            if (status == BotBrain.NavStatus.UNREACHABLE)
+                return "[UNREACHABLE] (" + x + "," + y + ") " + brain.LastNavFailure + " —— 换个目标点或先 query_route 查别的走法";
+            if (status == BotBrain.NavStatus.NO_PATH_FOUND)
+                return "[NO_PATH_FOUND] (" + x + "," + y + ") " + brain.LastNavFailure + " —— 本次没算出路,不代表永远不通:可试着走到附近别的点再试,或换目标";
+            if (status == BotBrain.NavStatus.INVALID)
+                return "[INVALID] " + brain.LastNavFailure;
+
             brain.MoveTarget = new Point(x, y);
             brain.FollowTargetId = 0;
-            var distance = Math.Max(Math.Abs(brain.Player.CurrentPosition.X - x), Math.Abs(brain.Player.CurrentPosition.Y - y));
-            if (distance > 15)
-                brain.RebuildPath(new Point(x, y)); // 远地方先算好路,免得在墙根打转
-            return "正在前往 (" + x + "," + y + ")";
+            if (path != null && path.Count > 0)
+                brain.SetRoute(path);
+            return "[ROUTED] 正在前往 (" + x + "," + y + "),路程约 " + path.Count + " 步,到了系统会告诉你";
         }
 
         private static string Attack(BotBrain brain, int targetId)
@@ -668,6 +690,93 @@ namespace GameServer.Bots
             BotLogger.Log(brain.Definition.Name, "act", "npc_talk(" + npcName + (option > 0 ? "," + option : "") + ")");
             return npc.ObjectName + "说: " + brief + (brief.Length < 3 ? " (他没说什么,可能只管卖东西/传送,直接试sell_item或goto_map)" : "")
                 + " [要选选项就再调npc_talk带上option编号;对话30秒不选会断]";
+        }
+
+        /// <summary>W1:查刷怪区(公共静态知识——地图/怪区人人可查,像看攻略站;实时占用要亲历)。</summary>
+        private static string QueryArea(BotBrain brain, string monster, string mapName)
+        {
+            var player = brain.Player;
+            monster = (monster ?? "").Trim();
+            mapName = (mapName ?? "").Trim();
+            var sb = new System.Text.StringBuilder();
+            var anyMap = mapName.Length == 0;
+            foreach (var spawn in MonsterSpawns.DataSheet)
+            {
+                var mapOk = anyMap || (spawn.FromMapName ?? "").Contains(mapName) || player.CurrentMap.地图模板.MapName.Contains(mapName) && spawn.FromMapId == player.CurrentMap.MapId;
+                if (!mapOk) continue;
+                var main = spawn.Spawns != null && spawn.Spawns.Length > 0 ? spawn.Spawns.OrderByDescending(x => x.SpawnCount).FirstOrDefault() : null;
+                if (main == null) continue;
+                if (monster.Length > 0 && !(main.MonsterName ?? "").Contains(monster)) continue;
+                GameServer.Templates.Monsters tpl;
+                var lv = GameServer.Templates.Monsters.DataSheet.TryGetValue(main.MonsterName, out tpl) ? tpl.Level : 0;
+                var dist = Math.Max(Math.Abs(spawn.FromCoords.X - player.CurrentPosition.X), Math.Abs(spawn.FromCoords.Y - player.CurrentPosition.Y));
+                // 路线状态:近的现场试算,远的标注未查
+                var routeNote = "路线未查(要走去就用move_to/query_route)";
+                if (dist <= 60 && spawn.FromMapId == player.CurrentMap.MapId)
+                {
+                    var st = brain.RouteTo(spawn.FromCoords, out var pp);
+                    routeNote = st == BotBrain.NavStatus.ROUTED ? "可达,约" + (pp != null ? pp.Count : 0) + "步" : "[" + st + "] " + brain.LastNavFailure;
+                }
+                sb.Append(main.MonsterName).Append("(").Append(lv).Append("级x").Append(main.SpawnCount).Append(") ")
+                  .Append(spawn.FromMapName).Append(" ").Append(spawn.FromCoords.X).Append(",").Append(spawn.FromCoords.Y)
+                  .Append(" 距").Append(dist).Append("格 ").Append(routeNote).Append(';').Append((char)10);
+            }
+            if (sb.Length == 0)
+                return monster.Length > 0
+                    ? "本图没查到[" + monster + "]的刷怪点(可能在本图没有,或换张图有;query_area不带monster列全图刷怪区,或问人/查check_guide)"
+                    : "本图没有刷怪点数据";
+            var brief = sb.Length > 700 ? sb.ToString(0, 700) + "..." : sb.ToString();
+            return "[公共地图情报] " + brief + " (实时有没有怪/被谁占着,要走到那才知道)";
+        }
+
+        /// <summary>W1:查路线(不动身)。</summary>
+        private static string QueryRoute(BotBrain brain, int x, int y)
+        {
+            if (x <= 0 || y <= 0) return "坐标不合法";
+            var status = brain.RouteTo(new Point(x, y), out var path);
+            switch (status)
+            {
+                case BotBrain.NavStatus.ROUTED:
+                    return "[ROUTED] 可达 (" + x + "," + y + "),约 " + (path != null ? path.Count : 0) + " 步,跑着走大概 " + ((path != null ? path.Count : 0) * 3 / 10) + " 秒";
+                case BotBrain.NavStatus.UNREACHABLE:
+                    return "[UNREACHABLE] " + brain.LastNavFailure;
+                case BotBrain.NavStatus.INVALID:
+                    return "[INVALID] " + brain.LastNavFailure;
+                default:
+                    return "[NO_PATH_FOUND] " + brain.LastNavFailure;
+            }
+        }
+
+        /// <summary>W1:找人(队友实时/视野实时/记忆上次目击)。</summary>
+        private static string LocatePlayer(BotBrain brain, string name)
+        {
+            name = (name ?? "").Trim();
+            if (name.Length == 0) return "要写名字";
+            var player = brain.Player;
+            // 队友:队伍数据实时共享
+            if (player.Team != null)
+            {
+                foreach (var member in player.Team.Members)
+                {
+                    if (member == null || !(member.CharName.V ?? "").Contains(name)) continue;
+                    SConnection conn;
+                    PlayerObject online;
+                    if (member.IsOnline(out conn) && conn != null && (online = conn.Player) != null && !online.Died)
+                        return "[队友/实时] " + member.CharName.V + " 在" + online.CurrentMap.地图模板.MapName + "(" + online.CurrentPosition.X + "," + online.CurrentPosition.Y + ") 距" + player.GetDistance(online) + "格";
+                    return "[队友] " + member.CharName.V + " 不在线(等他或密聊留言)";
+                }
+            }
+            // 视野内
+            foreach (var n in player.Neighbors)
+            {
+                var po = n as PlayerObject;
+                if (po != null && (po.ObjectName ?? "").Contains(name))
+                    return "[视野内] " + po.ObjectName + " 距" + player.GetDistance(po) + "格,方向" + (po.CurrentPosition.X > player.CurrentPosition.X ? "东" : "西") + (po.CurrentPosition.Y > player.CurrentPosition.Y ? "南" : "北");
+            }
+            // 记忆
+            var mem = brain.Memory.People.FirstOrDefault(kv => kv.Key.Contains(name));
+            if (mem.Key != null) return "[记忆] 没实时位置;你记得的 " + mem.Key + ": " + mem.Value + " (上线了问一句,或去老地方等)";
+            return "附近和记忆里都没有[" + name + "](不在线或在别的图;shout喊一声或等等)";
         }
 
         /// <summary>G1:卖东西给商店。找同图 12 格内带商店的 NPC 开店,按商店回收类型过滤背包,逐件卖并汇总。</summary>

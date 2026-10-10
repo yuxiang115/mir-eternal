@@ -1760,6 +1760,17 @@ namespace GameServer.Bots
         public TeleportGates _pendingGate;
         /// <summary>A* 全局路径(远目的地时一次性算好,逐点走;卡住时重算)。</summary>
         private LinkedList<Point> _pathSteps;
+
+        /// <summary>工具层装填已算好的导航路径(配合 RouteTo 使用)。</summary>
+        public void SetRoute(LinkedList<Point> steps)
+        {
+            _pathSteps = steps;
+            _pathRetried = false;
+        }
+
+        /// <summary>当前导航路径剩余步数(进度展示用)。</summary>
+        public int CurrentRouteRemaining => _pathSteps != null ? _pathSteps.Count : 0;
+
         /// <summary>本轮目的地的路径是否已重算过一次(重算后仍卡才放弃)。</summary>
         private bool _pathRetried;
         private DateTime _lastRepathLog;
@@ -1778,20 +1789,91 @@ namespace GameServer.Bots
         }
 
         /// <summary>为远目的地算一次 A* 路径;太远或不可达时退化为直走(局部绕行兜底)。</summary>
+        /// <summary>导航结果类型(GPT W2 评审:A* null 不等于永久不可达,必须分级报告)。</summary>
+        public enum NavStatus
+        {
+            /// <summary>找到完整路线,已装入路径。</summary>
+            ROUTED,
+            /// <summary>本次搜索没找到路(可能预算耗尽/目标点本身不可站),不是永久结论。</summary>
+            NO_PATH_FOUND,
+            /// <summary>搜索充分完成且确定不连通(仅 IsBlocked 目标格与起点同格以外场景才敢标)。</summary>
+            UNREACHABLE,
+            /// <summary>输入异常(跨图/坐标非法)。</summary>
+            INVALID,
+        }
+
+        /// <summary>最近一次导航的失败说明(工具层读取给 agent)。</summary>
+        public string LastNavFailure = "";
+
+        /// <summary>带语义的寻路:返回状态;不再静默退化直走。targetBlockedRef 用于诊断目标格是否本身不可站。</summary>
+        public NavStatus RouteTo(Point destination, out LinkedList<Point> pathOut)
+        {
+            pathOut = null;
+            if (Player == null || Player.CurrentMap == null)
+                return NavStatus.INVALID;
+            if (destination.X <= 0 || destination.Y <= 0)
+            {
+                LastNavFailure = "坐标不合法";
+                return NavStatus.INVALID;
+            }
+            if (Player.CurrentMap.IsBlocked(destination))
+            {
+                // 目标格不可站 ≠ 不可达:找目标附近 5 格内最近可站格作为替代落点
+                var alt = FindNearestPassable(destination, 5);
+                LastNavFailure = "目标格(" + destination.X + "," + destination.Y + ")本身不能站" + (alt.HasValue ? ",附近可站点(" + alt.Value.X + "," + alt.Value.Y + ")" : ",周围5格都没有可站点");
+                if (!alt.HasValue) return NavStatus.UNREACHABLE;
+                destination = alt.Value;
+            }
+            LinkedList<Point> path = null;
+            try
+            {
+                var found = BotPathfinder.FindPath(Player.CurrentMap, Player.CurrentPosition, destination);
+                if (found != null) path = new LinkedList<Point>(found);
+            }
+            catch (Exception ex)
+            {
+                LastNavFailure = "寻路异常:" + ex.Message;
+                return NavStatus.NO_PATH_FOUND;
+            }
+            if (path != null && path.Count > 0)
+            {
+                pathOut = path;
+                return NavStatus.ROUTED;
+            }
+            if (path != null && path.Count == 0)
+            {
+                pathOut = path; // 已在目的地
+                return NavStatus.ROUTED;
+            }
+            LastNavFailure = "本次搜索未找到完整路线(400k节点预算内无连通路径;不一定是永久不通,可试绕行/换出发侧/换目标点)";
+            return NavStatus.NO_PATH_FOUND;
+        }
+
+        /// <summary>螺旋找目标附近最近可站格(目标格本身被挡时给替代落点)。</summary>
+        public Point? FindNearestPassable(Point center, int radius)
+        {
+            var map = Player != null ? Player.CurrentMap : null;
+            if (map == null) return null;
+            for (var r = 1; r <= radius; r++)
+                for (var dx = -r; dx <= r; dx++)
+                    for (var dy = -r; dy <= r; dy++)
+                    {
+                        if (Math.Abs(dx) != r && Math.Abs(dy) != r) continue;
+                        var cand = new Point(center.X + dx, center.Y + dy);
+                        if (!map.IsBlocked(cand)) return cand;
+                    }
+            return null;
+        }
+
         public void RebuildPath(Point destination)
         {
             _pathSteps = null;
             _pathRetried = false;
-            try
-            {
-                var path = BotPathfinder.FindPath(Player.CurrentMap, Player.CurrentPosition, destination);
-                if (path != null)
-                    _pathSteps = new LinkedList<Point>(path);
-            }
-            catch (Exception ex)
-            {
-                MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 寻路失败(退化为直走): " + ex.Message);
-            }
+            var status = RouteTo(destination, out var path);
+            if (status == NavStatus.ROUTED && path != null)
+                _pathSteps = path;
+            else
+                MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 导航失败[" + status + "] →(" + destination.X + "," + destination.Y + "): " + LastNavFailure);
         }
 
         /// <summary>P0-3: 挂机挪窝的独立步进(不经过 ReflexMove,避免意图竞争)。</summary>
