@@ -1,4 +1,13 @@
-# 《传奇永恒》真玩家闭环系统设计(v1.2 · 定稿候选)
+# 《传奇永恒》真玩家闭环系统设计(v1.3 · G0 开工版)
+
+> **G0 三原则(GPT 终审,实施期间铁律)**:
+> 1. **记忆不只存规律**——塑造人生的独特事件(首次被击败/被救/被骗)即使只发生一次也要存
+> 2. **遗忘=过时认知不再主导当前决策,不是删除过去**——事实/观点/关系/目标各有生命周期;旧观点被推翻≠过去不重要;search 默认返回当前有效版本但支持 include_history/as_of 溯源;允许矛盾的主观并存(觉得他强+仍然不喜欢他)
+> 3. **记忆验收落在游戏行动上**——Recall/Update/Social Continuity/**Behavioral Change**(最重要:连输两次后是否真的换装备/改打法/转合作,而不是只改了 relationships.json 和嘴)
+>
+> **记忆记录身份(v1.3 全库统一)**:`{id, owner, type(belief/episode/relationship/goal/commitment/worldfact), subject, content, confidence(传闻存疑), importance, evidenceIds, revision, status(active/superseded/archived), supersedes, updatedAt}`——evidence 让认知可溯源到真实经历,supersedes 让认知知道从哪演化来
+>
+> **G0 实施顺序(GPT)**:最小 Workspace + Revision + Activity + 基础检索先行 → 事件驱动五阶段整合后接(原则采纳,运行流程不照搬);G0 不做:记忆图谱/每日自动删除/全量向量 RAG/每次反思独立子 agent
 
 > **版本**:v1.2 — 2026-10-09(v1.1 + 用户 Workspace 架构构想 + GPT 第四轮评审全采纳;G0 批准,本版为开工版)
 > **v1.1→v1.2 变更**:①新增**架构总纲:三层 Context + Agent Workspace**(用户:稳定 system prompt + 记忆/计划/追求全部工具化 CRUD + append-only,吃 cache hit;GPT 细化:逻辑工作区非真文件系统/revision 回执/事实守卫/压缩前先落盘)②G0 重写为 8 步实施序(GPT)③Q1-Q4 全部落定④勘误:deepseek-flash 谷价 hit=$0.003/M(用户记成0.0003,差10倍;hit=miss的1/50方向不变);GA 的 currently 自动改写未经源码验证(派对=研究者种下的初始意图,GA 也是种子式)
@@ -7,7 +16,7 @@
 
 ---
 
-## 一、Agent 回路:补上 GPT 指出的缺环
+## 一、Agent 回路:补上 GPT 指出的缺环(v1.3 注:下列行动项按 GPT 终审修订——A1 检索有效性按记忆类型判定+支持历史溯源查询;A2 检索取全:结构化问题(共打过几次PK)走结构化历史而非语义TopN,回执带 has_more/分页/覆盖度;A4 反思采 Letta 原则不照搬流程;A5 普通流水不存但独特经历必存;A6 Hot=索引+当前追求+重要关系+未解冲突;A7 细化=回执可影响同 Loop 后续推理,不可改变已执行动作)
 
 GPT 的判词准确:**回路四件套(工具/反馈/记忆/计划)都在,但没有"目标执行状态"——agent 发起行动后不知道进展到哪、何时算成、失败该换法**。这正是"挂机机器人感"的最后一块拼图。
 
