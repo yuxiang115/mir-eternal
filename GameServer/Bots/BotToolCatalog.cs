@@ -86,6 +86,10 @@ namespace GameServer.Bots
                     Param("text", "string", "内容(commit 支持时间写法:'20:00'/'明晚8点'/'2小时后')"),
                     Param("success", "string", "set_activity 专用:怎样算完成(如'金币>=800且背包有青铜剑')", required: false)),
                 Tool("activity_status", "查当前主攻活动的进度/卡点(系统按真实金币等校验'金币>=N'类条件)。挂机久了抬头看一眼自己在干嘛、干到哪了。"),
+                Tool("sell_item", "把东西卖给商店换钱(只收对应类型的店:药品店收药/武器店收武器…)。先人要在店附近:不知道店在哪就先在村里转转或问人。回执带卖了什么/单价/现在金币。",
+                    Param("name", "string", "卖什么(名字一部分)"),
+                    Param("count", "integer", "卖几个(不填=能卖的都卖)", required: false)),
+
                 Tool("check_guide", "查官方攻略:自己这等级该去哪张图练、打什么怪、穿什么武器(本服真实数据生成的)。不知道该干嘛/觉得练得慢/想换图时先查这个。",
                     Param("level", "integer", "查哪个等级段的(不填=自己当前等级)", required: false)),
                 Tool("team_accept", "接受刚收到的组队邀请(谁邀请的就跟他一队)。"),
@@ -191,6 +195,8 @@ namespace GameServer.Bots
                     }
                     case "plan_manage":
                         return PlanManage(brain, args["action"]?.ToString() ?? "", args["text"]?.ToString() ?? "", args["success"]?.ToString() ?? "");
+                    case "sell_item":
+                        return SellItem(brain, args["name"]?.ToString() ?? "", Math.Max(1, Math.Min(50, args["count"]?.Value<int?>() ?? 99)));
                     case "activity_status":
                     {
                         var a = brain.Memory.Activity;
@@ -631,6 +637,53 @@ namespace GameServer.Bots
         /// <summary>读背包里的技能书学技能(UseItem 即学,服务器消耗书并学会)。</summary>
 
         /// <summary>workspace_edit 路由:currently 自由改写 / belief 矛盾改源头(supersede) / knowledge 去重入册 / milestone / people。</summary>
+        /// <summary>G1:卖东西给商店。找同图 12 格内带商店的 NPC 开店,按商店回收类型过滤背包,逐件卖并汇总。</summary>
+        private static string SellItem(BotBrain brain, string name, int maxCount)
+        {
+            var player = brain.Player;
+            name = (name ?? "").Trim();
+            if (name.Length == 0) return "要写卖什么";
+
+            // 找同图、12格内、有商店且商店有回收类型的NPC
+            GuardObject shopkeeper = null;
+            GameStore store = null;
+            foreach (var npc in MapGatewayProcess.NPCs.Values)
+            {
+                if (npc == null || npc.CurrentMap != player.CurrentMap || npc.StoreId == 0) continue;
+                if (player.GetDistance(npc) > 12) continue;
+                if (!GameStore.DataSheet.TryGetValue(npc.StoreId, out var st) || st == null) continue;
+                if (st.RecyclingType == ItemsForSale.禁售) continue;
+                shopkeeper = npc; store = st;
+                break;
+            }
+            if (shopkeeper == null)
+                return "12格内没有收货的店(村里找带商店的NPC站过去再卖;不知道在哪就问人)";
+            if (player.对话守卫 != shopkeeper || player.打开商店 != shopkeeper.StoreId)
+                player.开始Npcc对话(shopkeeper.ObjectId);
+
+            // 商店回收类型匹配的背包物品
+            var sold = new List<string>();
+            var goldBefore = player.NumberGoldCoins;
+            var remain = maxCount;
+            foreach (var kv in player.Backpack.ToList())
+            {
+                if (remain <= 0) break;
+                var item = kv.Value;
+                if (item == null || item.物品模板 == null || item.IsBound) continue;
+                if (item.出售类型 != store.RecyclingType) continue;
+                if (!(item.物品模板.Name ?? "").Contains(name)) continue;
+                var qty = Math.Min(remain, Math.Max(1, item.当前持久.V));
+                player.玩家出售物品(1, kv.Key, (ushort)qty);
+                sold.Add(item.物品模板.Name + "x" + qty);
+                remain -= qty;
+            }
+            if (sold.Count == 0)
+                return "没卖掉:背包里没有[" + name + "] 是这家店收的(" + store.RecyclingType.ToString() + "店只收这种;找对应类型的店,或 drop_item 丢地上";
+            var delta = player.NumberGoldCoins - goldBefore;
+            BotLogger.Log(brain.Definition.Name, "econ", "卖店 +" + delta + "金: " + string.Join(",", sold));
+            return "卖了 " + string.Join(", ", sold) + ",进账 " + delta + " 金币,现在共 " + player.NumberGoldCoins + "(行情可以记进 knowledge:什么能卖多少)";
+        }
+
         private static string WorkspaceEdit(BotBrain brain, string path, string subject, string content, double confidence)
         {
             content = (content ?? "").Trim();

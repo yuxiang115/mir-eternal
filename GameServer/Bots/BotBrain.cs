@@ -807,7 +807,8 @@ namespace GameServer.Bots
             if (act != null && act.Status == "active")
                 sb.Append("[当前活动] ").Append(act.Goal)
                   .Append(" — ").Append(string.IsNullOrWhiteSpace(act.SuccessCondition) || act.SuccessCondition == "自己判断" ? "自己判断完成" : act.SuccessCondition)
-                  .Append(act.Blocker.Length > 0 ? " [卡住: " + act.Blocker + " —— 该换法了]" : "").Append((char)10);
+                  .Append(act.Blocker.Length > 0 ? " [卡住: " + act.Blocker + " —— 该换法了]" : "")
+                  .Append(FormatActivityProgress(act)).Append((char)10);
 
             // 家底见底:没钱没药是最高优先级的生存决策输入(实测:金币0的号反复死17次也没自救)
             if (s.Gold < 100 && s.HpPotions <= 3)
@@ -2196,6 +2197,16 @@ namespace GameServer.Bots
 
         /// <summary>通过技能Id查名字(从铭文表查,缓存结果)。</summary>
         private static readonly Dictionary<ushort, string> SkillNameCache = new Dictionary<ushort, string>();
+        private string FormatActivityProgress(BotActivityCard act)
+        {
+            if (act.SuccessCondition == null || Player == null) return "";
+            var m = System.Text.RegularExpressions.Regex.Match(act.SuccessCondition, @"金币\s*>=\s*(\d+)");
+            if (!m.Success) return "";
+            var target = int.Parse(m.Groups[1].Value);
+            var gold = Player.NumberGoldCoins;
+            return " [金币 " + gold + "/" + target + (gold >= target ? " ——够了,用 activity_status 收口" : "") + "] ";
+        }
+
         public static string GetSkillName(ushort skillId)
         {
             string name;
