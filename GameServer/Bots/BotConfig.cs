@@ -126,6 +126,10 @@ namespace GameServer.Bots
     public class BotPersonaCard
     {
         /// <summary>性格,如"自来熟的热心肠,爱管闲事,护短,战斗狂,有点抠门"。</summary>
+        /// <summary>身份底色(一句话自我概念,如"账算得比谁都清的打金姐姐")。</summary>
+        public string 身份 = "";
+        /// <summary>当前惦记(GA currently 式:有时效的动机,会随经历过期,不是终身目标)。</summary>
+        public string 惦记 = "";
         public string 性格 = "";
         /// <summary>背景故事,如"比奇老玩家,打过沙巴克攻城,半退隐后靠带萌新赚点药钱"。</summary>
         public string 背景 = "";

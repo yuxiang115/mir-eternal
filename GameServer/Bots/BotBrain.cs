@@ -208,12 +208,14 @@ namespace GameServer.Bots
             "7. 练级打怪前先看药够不够,不够就 buy_item 买(钱不够就先打钱多的怪或卖货);红蓝药喝完会提醒你,别硬撑。\n" +
             "8. 装备自己拿主意:对比背包和身上的(攻/防/需求),更好的直接 equip_item 穿上;打完怪地上的东西 pickup。**卖东西/收东西/夸口之前必须 check_inventory 看一眼 —— 没有的货不许喊,没钱不许喊收,别吹牛。**\n" +
             "8. **死亡是你的策略失误**:死了会停掉一切,让你想想为什么死(怪太强?等级不够?装备差?没药?)。想清楚了调 revive 复活,换个打法 — 别在同一个地方死第二次。血低自动喝药,但别指望系统救你。\n" +
-            "9. **答应别人将来的事(几点、和谁、干什么)必须调 make_plan 登记** —— 到点系统会提醒你,重启也不忘;办完调 plan_done 销掉。观察里 [待办] 是你惦记的事,[⏰该兑现了] 就是现在,立刻主动去找人、密聊、出发,别干等着。\n" +
+            "9. **答应别人将来的事(几点、和谁、干什么)必须调 plan_manage(commit) 登记** —— 到点系统会提醒你,重启也不忘;办完 plan_manage(done) 销掉。观察里 [待办] 是你惦记的事,[⏰该兑现了] 就是现在,立刻主动去找人、密聊、出发,别干等着。\n" +
             "10. 组队别光嘴上说:调 team_invite 真发邀请。交易用 give_gold 转账或 drop_item 丢地上让对方捡(传奇规矩)。全服收货卖货用 shout(一次1000金币,值不值自己掂量)。打怪想放特定技能(群攻/毒/治疗)先 check_skills 再 use_skill。\n" +
             "11. **技能是练出来的**:打怪掉/商店买的技能书用 learn_skill 读了学,学了要多放(use_skill,熟练度越用越高);道士的召唤技能学完放出来就有宝宝帮你打;check_skills 随时看你都会啥。别一辈子只会普攻。\n" +
             "12. **组队就像传奇当年的队**:跟紧队长别乱跑(系统会自动跟),打队伍正在打的怪;队长照顾落下的队友。一起走、一起打、爆了东西说一声。\n" +
-            "13. **要有自己的盘算**:没目标就 set_goal 立一个(练级/攒钱/搞装备/交朋友),做事围着目标转;不知道这等级该去哪、觉得练得慢,先 check_guide 查攻略再定计划;去哪练、怎么分工,可以和朋友商量着来(商量也是玩的一部分)。目标达成了/不想要了 drop_goal。\n" +
-            "14. **每天有自己的安排**:观察里 [今天还没计划] 就调 set_plan 定今天的打算(一两句话,别写成作文)——上午干什么、跟谁约了、睡前想搞定什么。计划是给自己看的主线,不是任务清单,做完/过天就改。别每天醒来都从零想起。\n\n";
+            "13. **要有自己的盘算**:目标从你的性格和经历里长出来 —— 没目标就 goal_manage(create) 立一个(练级/攒钱/搞装备/交朋友),达成 complete、不追了 abandon,都正常。主攻一件事时 plan_manage(set_activity) 登记(写清怎样算成,系统帮你盯进度);卡住了必须换方法,不是硬重复。不知道该去哪/练得慢,先 check_guide。\n" +
+            "14. **每天有自己的安排**:观察里 [今天还没计划] 就调 plan_manage(set_day) 定今天打算(一两句话,别写成作文)。\n" +
+            "15. **记忆是活的**:看法变了就 workspace_edit(belief) 改 —— 系统自动把旧看法归档,检索永远用最新版;一次性的大事(第一次被谁击败/被人救)也值得记(milestone);知识记规律别记流水。想不起自己记没记过什么,workspace_search 一下。\n" +
+            "16. **你是长期活跃的玩家**:主要生活发生在游戏里 —— 练级、打宝、交易、组队、探索、PK。不要编造上下线或现实生活事件;可以休息、挂机、停下手头的事,但你始终在这个世界。所有成果必须符合真实游戏状态。\n\n";
 
         private string BuildSystemPrompt()
         {
@@ -223,11 +225,13 @@ namespace GameServer.Bots
             var level = Player != null ? Player.CurrentLevel : Definition.Level;
 
             var sb = new System.Text.StringBuilder(CommonPromptHead);
-            sb.Append("【你是谁】你就是\"").Append(Definition.Name).Append("\"——").Append(raceName)
+            sb.Append("【你是谁】你就是\"").Append(Definition.Name).Append("——").Append(raceName)
               .Append(level).Append("级,玛法大陆上一个真实的玩家。你不是助手、不是客服、不是NPC,是一个活人在玩《热血传奇》。\n");
             if (persona)
             {
-                if (card.性格 != "") sb.Append("性格: ").Append(card.性格).Append('\n');
+                if (card.性格 != "") sb.Append("性格(你的底色,一辈子不变): ").Append(card.性格).Append('\n');
+                if (card.身份 != "") sb.Append("身份: ").Append(card.身份).Append('\n');
+                if (card.惦记 != "") sb.Append("最近惦记(会随经历变化): ").Append(card.惦记).Append('\n');
                 if (card.背景 != "") sb.Append("来历: ").Append(card.背景).Append('\n');
                 if (card.说话风格 != "") sb.Append("说话风格: ").Append(card.说话风格).Append('\n');
                 if (card.作息 != "") sb.Append("作息习惯: ").Append(card.作息).Append('\n');
@@ -794,7 +798,7 @@ namespace GameServer.Bots
             if (Memory.PlanDate == today && !string.IsNullOrWhiteSpace(Memory.DailyPlan))
                 sb.Append("[今天的计划] ").Append(Memory.DailyPlan).Append('\n');
             else
-                sb.Append("[今天还没计划] 想好今天干什么就调 set_plan 登记一两句(比如'上午冲8级,晚上找人组队')\n");
+                sb.Append("[今天还没计划] 想好今天干什么就调 plan_manage(set_day) 登记一两句\n");
 
             // 认知工作区:当前惦记(GA currently 式,agent 自由改写)+ 前台活动卡(G0)
             if (!string.IsNullOrWhiteSpace(Memory.Currently))
@@ -1130,26 +1134,44 @@ namespace GameServer.Bots
                     {
                         new LlmMessage("system", "你是传奇玩家\"" + Definition.Name + "\"(性格:" + persona.性格 + ")。你在回顾自己最近的游戏经历,像人一样琢磨明白几件事。"),
                         new LlmMessage("user",
-                            "我最近的经历:\n" + string.Join("\n", recent) +
-                            "\n\n用第一人称提炼1~3条你个人的感悟/结论/看法(像玩家想通了一件事,口语,每条一句话,贴合你的性格)。只输出这几条,每条一行。"),
+                            "整理你的记忆(像睡一觉把白天的事想明白)。你最近的经历:\n" + string.Join("\n", recent) +
+                            "\n\n你已经记住的(先看,别重复记):\n" +
+                            string.Join("\n", Memory.Knowledge.Take(12).Concat(Memory.Beliefs.Where(b => b.Status == "active").Select(b => "信念:" + b.Subject + "=" + b.Content)).Take(18)) +
+                            "\n\n按顺序想:\n" +
+                            "1) 有没有纠正了你原来的看法?有就输出: 改:旧看法 → 新看法(依据哪次经历)\n" +
+                            "2) 有没有重复出现的规律/门道?(单次流水不算)\n" +
+                            "3) 有没有塑造你的大事?(第一次被谁击败/被人救/被骗 —— 一次也值得记)输出: 大事: ...\n" +
+                            "4) 想通了什么道理?第一人称口语,最多2条\n" +
+                            "**已知的跳过;观察里能再看到的不记;没有值得记的就只输出: 无事**"),
                     };
 
                     var result = await LlmClient.ChatAsync(BotManager.Config.Llm, msgs, null);
                     var lines = (result.Content ?? "")
                         .Split('\n')
                         .Select(s => s.Trim().TrimStart('-', '•', '*').Trim())
-                        .Where(s => s.Length > 4)
-                        .Take(3)
+                        .Where(s => s.Length > 4 && !s.StartsWith("无事"))
+                        .Take(5)
                         .ToList();
                     foreach (var line in lines)
-                        Memory.RecordReflection(line);
+                    {
+                        if (line.StartsWith("改:"))
+                        {
+                            var arrow = line.IndexOf('→');
+                            if (arrow > 2)
+                                Memory.ReviseBelief("最近琢磨的事", line.Substring(arrow + 1).TrimStart(), 0.8, 0.7, "反思:" + line.Substring(2, arrow - 2).Trim());
+                            else
+                                Memory.RecordReflection(line);
+                        }
+                        else if (line.StartsWith("大事:"))
+                            Memory.RecordMilestone(line.Substring(3).Trim(), 6);
+                        else
+                            Memory.RecordReflection(line);
+                    }
                     if (lines.Count > 0)
                         MainProcess.AddSystemLog("[Bot反思] " + Definition.Name + ": " + string.Join(" / ", lines));
-                }
+                    else
+                        MainProcess.AddSystemLog("[Bot反思] " + Definition.Name + ": 这次没什么值得记的(合法)");
             }
-            catch (Exception ex)
-            {
-                MainProcess.AddSystemLog("[Bot] " + Definition.Name + " 反思失败(忽略): " + ex.Message);
             }
             finally
             {
